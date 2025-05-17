@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import sn.project.consultation.api.dto.*;
+import sn.project.consultation.data.entities.Patient;
 import sn.project.consultation.data.entities.ProSante;
 import sn.project.consultation.data.entities.RendezVous;
 import sn.project.consultation.data.repositories.PatientRepository;
@@ -75,18 +76,22 @@ public class RendezVousServiceImpl implements RendezVousService {
         return false;
     }
 
-    public RendezVousDTO creerRendezVous(RendezVousDTO dto) {
+    public RendezVousRequestDTO creerRendezVous(RendezVousRequestDTO dto) {
         RendezVous rdv = new RendezVous();
         rdv.setDateHeure(dto.getDateHeure());
         rdv.setStatut("EN_ATTENTE");
-        rdv.setPatient(PatientDTO.toEntity(dto.getPatient()));
-        rdv.setProsante(ProSanteDTO.toEntity(dto.getProfessionnel()));
+        String[] parts = dto.getPatient() != null ? dto.getPatient().split(" ", 2) : new String[]{"", ""};
+        Patient patient =patientRepo.findByNomIgnoreCaseAndPrenomIgnoreCase(parts[0], parts[1]).get();
+        String[] parts1 = dto.getProfessionnel() != null ? dto.getProfessionnel().split(" ", 2) : new String[]{"", ""};
+        ProSante proSante = proRepo.findByNomIgnoreCaseAndPrenomIgnoreCase(parts1[0],parts1[1]).get();
+        rdv.setPatient(patient);
+        rdv.setProsante(proSante);
         repo.save(rdv);
         dto.setId(rdv.getId());
 
         // ✅ Si le rendez-vous est dans les 24h => envoyer une alerte au Pro
         if (dto.getDateHeure().isBefore(LocalDateTime.now().plusHours(24))) {
-            String msg = "🔴 Nouveau rendez-vous urgent de " + dto.getPatient().getNom()
+            String msg = "🔴 Nouveau rendez-vous urgent de " + patient.getNom()
                     + " prévu à " + dto.getDateHeure();
             emailService.envoyerEmail(rdv.getProsante().getEmail(), "Rendez-vous urgent", msg);
             smsService.envoyerSms(rdv.getProsante().getNumeroTelephone(), msg);
@@ -171,28 +176,42 @@ public class RendezVousServiceImpl implements RendezVousService {
                 .collect(Collectors.toList());
     }
 
-    public RendezVousDTO modifierRendezVous(Long id, RendezVousDTO dto) {
+    public RendezVous modifierRendezVous(Long id, RendezVousDTO dto) {
         RendezVous rdv = repo.findById(id).orElseThrow();
         rdv.setDateHeure(dto.getDateHeure());
         repo.save(rdv);
-        return dto;
+        return rdv;
     }
-
 
 
     public TourneeOptimiseeDTO optimiserTournee(Long professionnelId) {
         List<RendezVous> rdvs = repo.findByProsanteIdAndDateHeureAfterOrderByDateHeureAsc(professionnelId, LocalDateTime.now());
         ProSante pro = proRepo.findById(professionnelId).orElseThrow();
 
-        if (rdvs.isEmpty()) return new TourneeOptimiseeDTO(LocalDateTime.now(), new ArrayList<>());
+        if (rdvs.size() < 2) {
+            // Retourne la tournée brute si clustering impossible (1 seul rdv ou aucun)
+            List<RendezVousDTO> dtos = rdvs.stream().map(r -> {
+                RendezVousDTO dto = new RendezVousDTO();
+                dto.setId(r.getId());
+                dto.setPatient(PatientDTO.fromEntity(r.getPatient()));
+                dto.setProfessionnel(ProSanteDTO.fromEntity(r.getProsante()));
+                dto.setDateHeure(r.getDateHeure());
+                dto.setStatut(r.getStatut());
+                return dto;
+            }).collect(Collectors.toList());
+
+            return new TourneeOptimiseeDTO(LocalDateTime.now(), dtos);
+        }
 
         // ✅ Étape 1 : Préparer les données de clustering
         double[][] coords = rdvs.stream()
                 .map(r -> new double[]{r.getPatient().getLatitude(), r.getPatient().getLongitude()})
                 .toArray(double[][]::new);
 
-        // ✅ Étape 2 : Appliquer KMeans
-        int k = Math.min(3, rdvs.size()); // Choix du nombre de clusters (peut être paramétrable)
+        // ✅ Étape 2 : Appliquer KMeans avec un nombre de clusters sûr
+        int k = Math.min(3, rdvs.size()); // entre 2 et rdvs.size()
+        if (k < 2) k = 2; // Sécurité
+
         KMeans km = KMeans.fit(coords, k);
 
         // ✅ Étape 3 : Associer les clusters aux rendez-vous
@@ -211,9 +230,9 @@ public class RendezVousServiceImpl implements RendezVousService {
                     ordonnes.add(dto);
                 });
 
-        // ✅ Étape 4 : Retour
         return new TourneeOptimiseeDTO(LocalDateTime.now(), ordonnes);
     }
+
 
     public List<Map<String, Object>> getCartePatients(Long proId) {
         List<RendezVous> rdvs = repo.findByProsanteIdAndDateHeureAfterOrderByDateHeureAsc(proId, LocalDateTime.now());

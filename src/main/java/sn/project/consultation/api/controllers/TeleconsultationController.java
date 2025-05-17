@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sn.project.consultation.api.dto.MessageDTO;
 import sn.project.consultation.api.dto.PlanificationDTO;
+import sn.project.consultation.api.dto.TeleconsultationDTO;
 import sn.project.consultation.data.entities.Message;
 import sn.project.consultation.data.entities.Teleconsultation;
 import sn.project.consultation.services.impl.TeleconsultationService;
@@ -22,9 +23,9 @@ public class TeleconsultationController {
      * Planifie une téléconsultation
      */
     @PostMapping("/planifier")
-    public ResponseEntity<Teleconsultation> planifier(@RequestBody PlanificationDTO dto) {
+    public ResponseEntity<TeleconsultationDTO> planifier(@RequestBody PlanificationDTO dto) {
         Teleconsultation tc = teleconsultationService.planifierTeleconsultation(dto.getPatientId(), dto.getMedecinId(), dto.getDateHeure());
-        return ResponseEntity.ok(tc);
+        return ResponseEntity.ok(TeleconsultationDTO.fromEntity(tc));
     }
 
     /**

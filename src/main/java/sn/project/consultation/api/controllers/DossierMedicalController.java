@@ -24,9 +24,9 @@ public class DossierMedicalController {
 
     // ✅ Ajout d’un document médical (ordonnance, analyse…)
     @PostMapping("/{id}/document")
-    public ResponseEntity<Void> ajouterDocument(@PathVariable Long id, @RequestBody DocumentDTO doc) {
+    public ResponseEntity<String> ajouterDocument(@PathVariable Long id, @RequestBody DocumentDTO doc) {
         service.ajouterDocument(id, doc);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("Ajout réussi");
     }
 
     // ✅ Ajout d’un historique de consultation

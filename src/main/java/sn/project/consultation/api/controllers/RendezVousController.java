@@ -6,10 +6,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sn.project.consultation.api.dto.ProSanteDTO;
-import sn.project.consultation.api.dto.RechercheProDTO;
-import sn.project.consultation.api.dto.RendezVousDTO;
-import sn.project.consultation.api.dto.TourneeOptimiseeDTO;
+import sn.project.consultation.api.dto.*;
+import sn.project.consultation.data.entities.RendezVous;
 import sn.project.consultation.services.RendezVousService;
 
 import java.time.LocalDate;
@@ -25,8 +23,8 @@ public class RendezVousController {
     private RendezVousService service;
 
     @PostMapping
-    public ResponseEntity<RendezVousDTO> creer(@RequestBody RendezVousDTO dto) {
-        RendezVousDTO result = service.creerRendezVous(dto);
+    public ResponseEntity<RendezVousRequestDTO> creer(@RequestBody RendezVousRequestDTO dto) {
+        RendezVousRequestDTO result = service.creerRendezVous(dto);
         if (result.getId() != null) {
             return ResponseEntity.ok(result);
         } else {
@@ -58,8 +56,9 @@ public class RendezVousController {
     @PutMapping("/{id}")
     public ResponseEntity<RendezVousDTO> modifier(@PathVariable Long id, @RequestBody RendezVousDTO dto) {
         try {
-            RendezVousDTO updated = service.modifierRendezVous(id, dto);
-            return ResponseEntity.ok(updated);
+            RendezVous updated = service.modifierRendezVous(id, dto);
+
+            return ResponseEntity.ok(RendezVousDTO.fromEntity(updated));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
         }

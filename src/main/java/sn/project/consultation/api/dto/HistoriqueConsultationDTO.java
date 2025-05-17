@@ -7,7 +7,6 @@ import sn.project.consultation.data.entities.HistoriqueConsultation;
 
 @Data
 public class HistoriqueConsultationDTO {
-    private Long id;
     private LocalDate date;
     private String notes;
     private String traitement;
@@ -18,7 +17,6 @@ public class HistoriqueConsultationDTO {
         }
 
         HistoriqueConsultationDTO dto = new HistoriqueConsultationDTO();
-        dto.setId(entity.getId());
         dto.setDate(entity.getDate());
         dto.setNotes(entity.getNotes());
         dto.setTraitement(entity.getTraitement());
@@ -32,7 +30,6 @@ public class HistoriqueConsultationDTO {
         }
 
         HistoriqueConsultation entity = new HistoriqueConsultation();
-        entity.setId(dto.getId());
         entity.setDate(dto.getDate());
         entity.setNotes(dto.getNotes());
         entity.setTraitement(dto.getTraitement());
