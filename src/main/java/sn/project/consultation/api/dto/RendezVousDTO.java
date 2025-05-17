@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class RendezVousDTO {
     private Long id;
-    private Long patientId;
-    private Long professionnelId;
+    private PatientDTO patient;
+    private ProSanteDTO professionnel;
     private LocalDateTime dateHeure;
     private String statut;
 }

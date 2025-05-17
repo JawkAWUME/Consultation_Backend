@@ -8,6 +8,8 @@ import sn.project.consultation.api.dto.DossierMedicalDTO;
 import sn.project.consultation.api.dto.HistoriqueConsultationDTO;
 import sn.project.consultation.services.DossierMedicalService;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/dossier")
 public class DossierMedicalController {
@@ -32,5 +34,13 @@ public class DossierMedicalController {
     public ResponseEntity<Void> ajouterHistorique(@PathVariable Long id, @RequestBody HistoriqueConsultationDTO histo) {
         service.ajouterHistorique(id, histo);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/diagnostic/{patientId}")
+    public ResponseEntity<Map<String, Long>> analyserPathologies(@PathVariable Long patientId) {
+        Map<String, Long> resultats = service.analyserPathologies(patientId);
+        return resultats.isEmpty()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.ok(resultats);
     }
 }
