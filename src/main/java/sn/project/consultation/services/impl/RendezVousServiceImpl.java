@@ -49,8 +49,7 @@ public class RendezVousServiceImpl implements RendezVousService {
 
                 String contenu = "Bonjour " + nom + ", ceci est un rappel pour votre rendez-vous prévu le " + date;
 
-                emailService.envoyerEmail(email, "Rappel de rendez-vous", contenu);
-                smsService.envoyerSms(phone, contenu);
+                emailService.envoyerEmail("jawkstwitter@gmail.com", "Rappel de rendez-vous", contenu);
 
                 // Marquer comme rappelé si tu veux éviter les doublons (ex : en base de données ou via Redis)
             }

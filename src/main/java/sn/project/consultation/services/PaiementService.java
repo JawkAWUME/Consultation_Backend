@@ -22,6 +22,7 @@ public class PaiementService {
     @Autowired private FactureService factureService;
     @Autowired private PatientRepository patientRepo;
     @Autowired private ProSanteRepository proRepo;
+    @Autowired private CloudStorageService cloudStorage;
     @Autowired private EmailService emailService;
     @Autowired private SmsService smsService;
 
@@ -47,7 +48,7 @@ public class PaiementService {
         paiement.setDatePaiement(LocalDateTime.now());
         paiement.setMethode(dto.getMethode() != null ? dto.getMethode() : methodePredefinie);
         paiement.setStatut("SUCCES"); // Simulé
-
+        paiementRepo.save(paiement);
         // 🤖 Génération automatique de facture
         Facture facture = factureService.genererEtEnvoyerFacture(paiement);
         paiement.setFacture(facture);
@@ -68,20 +69,28 @@ public class PaiementService {
     private void envoyerRecuMultiCanal(Patient patient, Facture facture) {
         String message = "🎉 Paiement confirmé ! Reçu n°" + facture.getNumero() + " envoyé à votre email.";
 
+        // Extraire chemin relatif depuis l’URL simulée
+        String url = facture.getUrlPdf();
+        String cheminRelatif = url.replace("http://localhost:10001/files/", "");
+
+        // Convertir en chemin local
+        String cheminLocal = cloudStorage.getCheminComplet(cheminRelatif);
+
         // Email
         emailService.envoyerEmail(
-                patient.getEmail(),
+                "jawkstwitter@gmail.com",
                 "Votre reçu de paiement",
                 message,
-                facture.getUrlPdf()
+                cheminLocal
         );
 
         // SMS
-        if (patient.getNumeroTelephone() != null) {
-            smsService.envoyerSms(patient.getNumeroTelephone(), message);
-        }
+//        if (patient.getNumeroTelephone() != null) {
+//            smsService.envoyerSms(patient.getNumeroTelephone(), message);
+//        }
 
-        // WebSocket notification (optionnel)
+        // WebSocket (optionnel)
         // notificationService.push(patient.getId(), "Reçu disponible 📄");
     }
+
 }

@@ -34,7 +34,6 @@ public class PatientFixtures implements CommandLineRunner {
         for (int i = 0; i < nomsPrenoms.length; i++) {
             String nom = nomsPrenoms[i][0];
             String prenom = nomsPrenoms[i][1];
-
             Patient patient = new Patient();
             patient.setNom(nom);
             patient.setPrenom(prenom);

@@ -35,16 +35,10 @@ public class FactureService {
      * Génère une facture PDF, l’enregistre et l’envoie au patient.
      */
     public Facture genererEtEnvoyerFacture(Paiement paiement) {
-        // 🔢 Numérotation intelligente
         String numero = genererNumeroFacture(paiement);
-
-        // 📄 Génération PDF
         byte[] pdf = pdfGenerator.genererFacturePDF(paiement, numero);
-
-        // ☁️ Stockage cloud/local
         String urlStockage = cloudStorage.upload(pdf, "factures/" + numero + ".pdf");
 
-        // 🧾 Création de l’objet facture
         Facture facture = new Facture();
         facture.setNumero(numero);
         facture.setDateEmission(paiement.getDatePaiement());
@@ -53,17 +47,18 @@ public class FactureService {
 
         facture = factureRepo.save(facture);
 
-        // 📧 Envoi automatique au patient
+        // Envoi par email avec pièce jointe (ByteArrayResource)
         emailService.envoyerEmail(
-                paiement.getPatient().getEmail(),
+                "jawkstwitter@gmail.com",
                 "📄 Votre facture #" + numero,
-                "Merci pour votre paiement. Votre facture est jointe en pièce jointe ou disponible ici : " + urlStockage,
+                "Merci pour votre paiement. Votre facture est jointe ou consultable ici : " + urlStockage,
                 pdf,
                 "facture-" + numero + ".pdf"
         );
 
         return facture;
     }
+
 
     public List<Facture> getFacturesByPatient(Long patientId) {
         Patient patient=patientRepo.findById(patientId).orElseThrow();

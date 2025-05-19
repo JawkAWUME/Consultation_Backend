@@ -10,7 +10,6 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-
 @Service
 public class EmailService {
 
@@ -22,6 +21,7 @@ public class EmailService {
         message.setTo(to);
         message.setSubject(sujet);
         message.setText(contenu);
+        message.setFrom("jasonawume5@gmail.com");
         mailSender.send(message);
     }
 
@@ -29,20 +29,18 @@ public class EmailService {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-
             helper.setTo(to);
             helper.setSubject(sujet);
             helper.setText(contenu);
+            helper.setFrom("jasonawume5@gmail.com");
             helper.addAttachment(nomFichier, new ByteArrayResource(pdf));
-
             mailSender.send(mimeMessage);
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de l'envoi de l'email avec pièce jointe", e);
         }
-
     }
 
-    // ✅ Envoi avec pièce jointe depuis un chemin local
+    // 👇 Cette méthode attend un chemin physique local, PAS une URL
     public void envoyerEmail(String to, String sujet, String contenu, String cheminFichier) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -50,12 +48,11 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject(sujet);
             helper.setText(contenu);
-
+            helper.setFrom("jasonawume5@gmail.com");
             FileSystemResource file = new FileSystemResource(new File(cheminFichier));
             if (!file.exists()) {
                 throw new RuntimeException("Fichier non trouvé : " + cheminFichier);
             }
-
             helper.addAttachment(file.getFilename(), file);
             mailSender.send(mimeMessage);
         } catch (Exception e) {
@@ -63,3 +60,4 @@ public class EmailService {
         }
     }
 }
+
