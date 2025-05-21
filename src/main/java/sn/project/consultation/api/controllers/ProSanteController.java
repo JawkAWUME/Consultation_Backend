@@ -1,5 +1,9 @@
 package sn.project.consultation.api.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -18,11 +22,17 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/pros")
 @CrossOrigin("*")
+@Tag(name = "Professionnels de Santé", description = "Liste des professionnels de santé")
 public class ProSanteController {
 
     @Autowired
     private ProSanteRepository proRepository;
 
+    @Operation(summary = "Liste des professionnels de santé")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des professionnels récupérée avec succès"),
+            @ApiResponse(responseCode = "500", description = "Erreur serveur")
+    })
     @GetMapping("")
     public ResponseEntity<Map<String, Object>> getProsAsDto() {
         List<ProSante> pros = proRepository.findAll();

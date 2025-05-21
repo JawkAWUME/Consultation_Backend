@@ -5,4 +5,5 @@ import sn.project.consultation.data.entities.RendezVous;
 import sn.project.consultation.data.entities.User;
 
 public interface UserRepository extends JpaRepository<User, Long> {
+    User findByEmail(String email);
 }

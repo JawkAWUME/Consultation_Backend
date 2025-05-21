@@ -20,6 +20,7 @@ public class DossierMedicalDTO {
     private String resume;
     private List<DocumentDTO> documents;
     private List<HistoriqueConsultationDTO> historiques;
+    private AntecedentsDTO antecedents;
 
     public static DossierMedicalDTO fromEntity(DossierMedical dossier) {
         if (dossier == null) {

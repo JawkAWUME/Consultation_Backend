@@ -21,9 +21,26 @@ public class DossierMedical {
     @ManyToOne
     private Patient patient;
 
+    private String couvertureSociale;
+    private String personneUrgence;
+    private String telPersonneUrgence;
+
     @OneToMany(mappedBy = "dossier", cascade = CascadeType.ALL)
     private List<DocumentMedical> documents;
 
+    @Embedded
+    private Antecedents antecedents;
+
+    @Embedded
+    private ExamenClinique examenClinique;
+
+    @Embedded
+    private ExamensComplementaires examensComplementaires;
+
+    @Embedded
+    private DiagnosticMedical diagnosticMedical;
+
     @OneToMany(mappedBy = "dossier", cascade = CascadeType.ALL)
     private List<HistoriqueConsultation> historiques;
+
 }

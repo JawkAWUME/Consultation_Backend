@@ -1,5 +1,9 @@
 package sn.project.consultation.api.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/paiements")
+@Tag(name = "Paiements", description = "Paiement, Facture")
 public class PaiementController {
 
     @Autowired private PaiementService paiementService;
@@ -26,6 +31,12 @@ public class PaiementController {
     /**
      * ✅ Effectuer un paiement intelligent avec génération de facture et envoi multi-canal
      */
+    @Operation(summary = "Effectuer un paiement")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Paiement effectué avec succès"),
+            @ApiResponse(responseCode = "400", description = "Données de paiement invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur Serveur"),
+    })
     @PostMapping("/payer")
     public ResponseEntity<Facture> effectuerPaiement(@RequestBody PaiementRequestDTO dto) {
         Facture facture = paiementService.effectuerPaiement(dto);
@@ -57,6 +68,12 @@ public class PaiementController {
     /**
      * 📁 Liste des factures d’un patient
      */
+    @Operation(summary = "Lister les factures d'un patient")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des factures récupérée avec succès"),
+            @ApiResponse(responseCode = "404", description = "Patient non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur serveur")
+    })
     @GetMapping("/factures/{patientId}")
     public ResponseEntity<List<Facture>> listerFactures(@PathVariable Long patientId) {
         List<Facture> factures = factureService.getFacturesByPatient(patientId);
@@ -66,6 +83,12 @@ public class PaiementController {
     /**
      * 🔍 Détail complet d’un paiement
      */
+    @Operation(summary = "Obtenir les détails d'un paiement")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Détails du paiement récupérés avec succès"),
+            @ApiResponse(responseCode = "404", description = "Paiement non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur serveur")
+    })
     @GetMapping("/details/{paiementId}")
     public ResponseEntity<Paiement> getDetailPaiement(@PathVariable Long paiementId) {
         Paiement paiement = paiementRepo.findById(paiementId).orElseThrow();
@@ -75,6 +98,12 @@ public class PaiementController {
     /**
      * 🗑️ Supprimer une facture (optionnel - réservé à un rôle admin ou gestionnaire)
      */
+    @Operation(summary = "Supprimer une facture")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Facture supprimée avec succès"),
+            @ApiResponse(responseCode = "404", description = "Facture non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur serveur")
+    })
     @DeleteMapping("/factures/{id}")
     public ResponseEntity<Void> supprimerFacture(@PathVariable Long id) {
         factureRepo.deleteById(id);

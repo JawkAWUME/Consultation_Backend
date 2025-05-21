@@ -55,8 +55,8 @@ public class PDFGeneratorService {
     private void ajouterInfosClient(Document doc, Paiement paiement) throws Exception {
         Paragraph infos = new Paragraph();
         infos.add(new Phrase("Patient : " + paiement.getPatient().getNom() + "\n"));
-        infos.add(new Phrase("Email : " + paiement.getPatient().getEmail() + "\n"));
-        infos.add(new Phrase("Téléphone : " + paiement.getPatient().getNumeroTelephone() + "\n\n"));
+        infos.add(new Phrase("Email : " + paiement.getPatient().getCoordonnees().getEmail() + "\n"));
+        infos.add(new Phrase("Téléphone : " + paiement.getPatient().getCoordonnees().getNumeroTelephone() + "\n\n"));
 
         infos.add(new Phrase("Professionnel : Dr. " + paiement.getProfessionnel().getNom() + "\n"));
         infos.add(new Phrase("Spécialité : " + paiement.getProfessionnel().getSpecialite() + "\n"));
