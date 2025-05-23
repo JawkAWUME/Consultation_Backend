@@ -42,8 +42,8 @@ public class RendezVousServiceImpl implements RendezVousService {
 
         for (RendezVous rdv : rdvs) {
             if (!rappelDejaEnvoye(rdv)) {
-                String email = rdv.getPatient().getEmail();
-                String phone = rdv.getPatient().getNumeroTelephone();
+                String email = rdv.getPatient().getCoordonnees().getEmail();
+                String phone = rdv.getPatient().getCoordonnees().getNumeroTelephone();
                 String nom = rdv.getPatient().getNom();
                 String date = rdv.getDateHeure().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm"));
 
@@ -92,8 +92,8 @@ public class RendezVousServiceImpl implements RendezVousService {
         if (dto.getDateHeure().isBefore(LocalDateTime.now().plusHours(24))) {
             String msg = "🔴 Nouveau rendez-vous urgent de " + patient.getNom()
                     + " prévu à " + dto.getDateHeure();
-            emailService.envoyerEmail(rdv.getProsante().getEmail(), "Rendez-vous urgent", msg);
-            smsService.envoyerSms(rdv.getProsante().getNumeroTelephone(), msg);
+            emailService.envoyerEmail(rdv.getProsante().getCoordonnees().getEmail(), "Rendez-vous urgent", msg);
+            smsService.envoyerSms(rdv.getProsante().getCoordonnees().getNumeroTelephone(), msg);
         }
         return dto;
     }

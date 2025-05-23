@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import sn.project.consultation.data.entities.Coordonnees;
 import sn.project.consultation.data.entities.Patient;
 import sn.project.consultation.data.entities.ProSante;
 import sn.project.consultation.data.enums.RoleUser;
@@ -27,8 +28,8 @@ public class PatientDTO {
         return new PatientDTO(
                 patient.getId(),
                 patient.getNom()+" "+patient.getPrenom(),  // Assure-toi que la classe User (superclasse) a bien la méthode getNom()
-                patient.getAdresse(),
-                patient.getEmail(),
+                patient.getCoordonnees().getAdresse(),
+                patient.getCoordonnees().getEmail(),
                 patient.getRole()
                 // distanceKm sera probablement calculée ailleurs
         );
@@ -46,9 +47,10 @@ public class PatientDTO {
         String[] parts = dto.getNom() != null ? dto.getNom().split(" ", 2) : new String[]{"", ""};
         patient.setNom(parts[0]);
         patient.setPrenom(parts.length > 1 ? parts[1] : "");
-
-        patient.setAdresse(dto.getAdresse());
-        patient.setEmail(dto.getEmail());
+        Coordonnees coordonnees = new Coordonnees();
+        coordonnees.setAdresse(dto.getAdresse());
+        coordonnees.setEmail(dto.getEmail());
+        patient.setCoordonnees(coordonnees);
         patient.setRole(dto.getRole());
 
         return patient;

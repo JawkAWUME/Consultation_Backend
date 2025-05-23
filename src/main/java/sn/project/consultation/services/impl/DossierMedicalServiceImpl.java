@@ -2,140 +2,118 @@ package sn.project.consultation.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import sn.project.consultation.api.dto.DocumentDTO;
-import sn.project.consultation.api.dto.DossierMedicalDTO;
-import sn.project.consultation.api.dto.HistoriqueConsultationDTO;
-import sn.project.consultation.api.dto.PatientDTO;
-import sn.project.consultation.data.entities.DocumentMedical;
-import sn.project.consultation.data.entities.DossierMedical;
-import sn.project.consultation.data.entities.HistoriqueConsultation;
-import sn.project.consultation.data.repositories.DocumentMedicalRepository;
-import sn.project.consultation.data.repositories.DossierMedicalRepository;
+import sn.project.consultation.api.dto.*;
+import sn.project.consultation.data.entities.*;
+import sn.project.consultation.data.repositories.*;
 import sn.project.consultation.services.DossierMedicalService;
-
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-
 
 
 @Service
 public class DossierMedicalServiceImpl implements DossierMedicalService {
 
-    @Autowired private DossierMedicalRepository repo;
-    @Autowired private DocumentMedicalRepository docRepo;
+    @Autowired private DossierMedicalRepository dossierRepo;
+    @Autowired private PatientRepository patientRepo;
+    @Autowired private DocumentMedicalRepository documentRepo;
+    @Autowired private FichierMedicalRepository fichierRepo;
+    @Autowired private HistoriqueConsultationRepository historiqueRepo;
 
-    private static final Set<String> PATHOLOGIES_CLES = Set.of(
-            "diabete", "hypertension", "asthme", "cancer", "allergie", "cholesterol", "cardiaque", "anemie", "ulcere", "covid"
-    );
+    // === CRUD GLOBAL ===
 
-    /**
-     * ✅ Récupération complète et enrichie du dossier
-     */
+    public DossierMedicalDTO creerDossier(Long patientId) {
+        Patient patient = patientRepo.findById(patientId).orElseThrow(() -> new RuntimeException("Patient non trouvé"));
+        DossierMedical dossier = new DossierMedical();
+        dossier.setPatient(patient);
+        dossier = dossierRepo.save(dossier);
+        return DossierMedicalDTO.fromEntity(dossier);
+    }
+
     public DossierMedicalDTO getDossierByPatientId(Long id) {
-        DossierMedical dossier = repo.findByPatientId(id).orElseThrow();
-        DossierMedicalDTO dto = mapToDTO(dossier);
-
-        // Générer résumé si manquant
-        if (dossier.getResume() == null || dossier.getResume().isBlank()) {
-            dto.setResume(genererResumeIntelligent(dossier));
-        }
-
-        return dto;
+        return DossierMedicalDTO.fromEntity(
+                dossierRepo.findByPatientId(id).orElseThrow(() -> new RuntimeException("Dossier introuvable")));
     }
 
-    /**
-     * ✅ Ajout d’un document avec structuration intelligente
-     */
-    public void ajouterDocument(Long dossierId, DocumentDTO doc) {
-        DossierMedical dossier = repo.findById(dossierId).orElseThrow();
-
-        DocumentMedical document = new DocumentMedical();
-        document.setNom(formaterNomDocument(doc.getNom()));
-        document.setUrlStockage(doc.getUrlStockage());
-        document.setDossier(dossier);
-
-        dossier.getDocuments().add(document);
-        repo.save(dossier);
+    private DossierMedical getDossier(Long id) {
+        return dossierRepo.findById(id).orElseThrow(() -> new RuntimeException("Dossier introuvable"));
     }
 
-    /**
-     * ✅ Ajout de consultation avec détection intelligente
-     */
-    public void ajouterHistorique(Long dossierId, HistoriqueConsultationDTO h) {
-        DossierMedical dossier = repo.findById(dossierId).orElseThrow();
+    // === DOCUMENTS MÉDICAUX ===
 
-        HistoriqueConsultation hist = new HistoriqueConsultation();
-        hist.setDate(h.getDate());
-        hist.setNotes(h.getNotes());
-        hist.setTraitement(h.getTraitement());
-        hist.setDossier(dossier);
-
-        // 🚨 Détection de mots-clés critiques
-        String notesLower = Optional.ofNullable(h.getNotes()).orElse("").toLowerCase();
-        if (notesLower.contains("hypertension") || notesLower.contains("urgence")) {
-            dossier.setResume("⚠️ Surveillance recommandée : antécédents critiques détectés.");
-        }
-
-        dossier.getHistoriques().add(hist);
-        repo.save(dossier);
+    public void ajouterDocument(Long dossierId, DocumentDTO dto) {
+        DossierMedical dossier = getDossier(dossierId);
+        DocumentMedical doc = DocumentDTO.toEntity(dto);
+        dossier.getDocuments().add(doc);
+        documentRepo.save(doc);
     }
 
-    /**
-     * 🔍 Analyse intelligente des pathologies fréquentes
-     */
-    public Map<String, Long> analyserPathologies(Long patientId) {
-        DossierMedical dossier = repo.findByPatientId(patientId).orElseThrow();
-
-        return dossier.getHistoriques().stream()
-                .map(HistoriqueConsultation::getNotes)
-                .filter(Objects::nonNull)
-                .flatMap(notes -> Arrays.stream(notes.toLowerCase().split("[ ,;:.!?]")))
-                .filter(mot -> PATHOLOGIES_CLES.contains(mot))
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    public void ajouterFichierAnnexe(Long dossierId, FichierMedicalDTO dto) {
+        DossierMedical dossier = getDossier(dossierId);
+        FichierMedical fichier = FichierMedicalDTO.toEntity(dto, dossier);
+        fichierRepo.save(fichier);
     }
 
-    /**
-     * ✅ Mapping enrichi vers DTO
-     */
-    private DossierMedicalDTO mapToDTO(DossierMedical d) {
-        DossierMedicalDTO dto = new DossierMedicalDTO();
-        dto.setId(d.getId());
-        dto.setResume(d.getResume());
-        dto.setPatient(PatientDTO.fromEntity(d.getPatient()));
-        dto.setDocuments(DocumentDTO.fromEntities(docRepo.findByDossierId(d.getId())));
+    // === HISTORIQUE DE CONSULTATIONS ===
 
-        dto.setHistoriques(
-                d.getHistoriques().stream().map(h -> {
-                    HistoriqueConsultationDTO hDto = new HistoriqueConsultationDTO();
-                    hDto.setDate(h.getDate());
-                    hDto.setNotes(h.getNotes());
-                    hDto.setTraitement(h.getTraitement());
-                    return hDto;
-                }).collect(Collectors.toList())
-        );
-
-        return dto;
+    public void ajouterHistorique(Long dossierId, HistoriqueConsultationDTO dto) {
+        DossierMedical dossier = getDossier(dossierId);
+        HistoriqueConsultation histo = HistoriqueConsultationDTO.toEntity(dto);
+        dossier.getHistoriques().add(histo);
+        historiqueRepo.save(histo);
     }
 
-    /**
-     * 🧠 Génère un résumé en analysant les pathologies dominantes
-     */
-    private String genererResumeIntelligent(DossierMedical dossier) {
-        Map<String, Long> stats = analyserPathologies(dossier.getPatient().getId());
-        return stats.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(3)
-                .map(e -> "📌 " + e.getKey() + " (" + e.getValue() + " occurrence" + (e.getValue() > 1 ? "s" : "") + ")")
-                .collect(Collectors.joining(" | ", "Résumé santé : ", ""));
+    // === ANTÉCÉDENTS MÉDICAUX ===
+
+    public void enregistrerAntecedents(Long dossierId, Antecedents antecedents) {
+        DossierMedical dossier = getDossier(dossierId);
+        dossier.setAntecedents(antecedents);
+        dossierRepo.save(dossier);
     }
 
-    /**
-     * 🗂️ Format intelligent du nom de document
-     */
-    private String formaterNomDocument(String nom) {
-        if (nom == null) return "Document Médical";
-        return nom.trim().replaceAll("\\s+", "_").toUpperCase();
+    // === EXAMEN CLINIQUE ===
+
+    public void enregistrerExamenClinique(Long dossierId, ExamenClinique examen) {
+        DossierMedical dossier = getDossier(dossierId);
+        dossier.setExamenClinique(examen);
+        dossierRepo.save(dossier);
+    }
+
+    // === EXAMENS COMPLÉMENTAIRES ===
+
+    public void enregistrerExamensComplementaires(Long dossierId, ExamensComplementaires examens) {
+        DossierMedical dossier = getDossier(dossierId);
+        dossier.setExamensComplementaires(examens);
+        dossierRepo.save(dossier);
+    }
+
+    // === DIAGNOSTIC MÉDICAL ===
+
+    public void enregistrerDiagnostic(Long dossierId, DiagnosticMedical diagnostic) {
+        DossierMedical dossier = getDossier(dossierId);
+        dossier.setDiagnosticMedical(diagnostic);
+        dossierRepo.save(dossier);
+    }
+
+    // === TRAITEMENTS ET PRESCRIPTIONS ===
+
+    public void enregistrerTraitements(Long dossierId, TraitementPrescription traitements) {
+        DossierMedical dossier = getDossier(dossierId);
+        dossier.setTraitements(traitements);
+        dossierRepo.save(dossier);
+    }
+
+    // === ÉVOLUTION ET SUIVI ===
+
+    public void enregistrerEvolutionSuivi(Long dossierId, EvolutionSuivi suivi) {
+        DossierMedical dossier = getDossier(dossierId);
+        dossier.setEvolutionSuivi(suivi);
+        dossierRepo.save(dossier);
+    }
+
+    // === CORRESPONDANCES MÉDICALES ===
+
+    public void enregistrerCorrespondances(Long dossierId, Correspondances correspondances) {
+        DossierMedical dossier = getDossier(dossierId);
+        dossier.setCorrespondances(correspondances);
+        dossierRepo.save(dossier);
     }
 }
+

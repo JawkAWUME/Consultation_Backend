@@ -1,6 +1,7 @@
 package sn.project.consultation.data.fixtures;
 
 
+import sn.project.consultation.data.entities.Coordonnees;
 import sn.project.consultation.data.entities.Patient;
 import sn.project.consultation.data.enums.RoleUser;
 import sn.project.consultation.data.repositories.PatientRepository;
@@ -37,11 +38,13 @@ public class PatientFixtures implements CommandLineRunner {
             Patient patient = new Patient();
             patient.setNom(nom);
             patient.setPrenom(prenom);
-            patient.setEmail((prenom + "." + nom + "@santeado.com").toLowerCase());
+            Coordonnees coordonnees = new Coordonnees();
+            coordonnees.setEmail((prenom + "." + nom + "@santeado.com").toLowerCase());
             patient.setMotDePasse("password123"); // à encoder si nécessaire
-            patient.setNumeroTelephone("77" + String.format("%07d", 1000 + i));
+            coordonnees.setNumeroTelephone("77" + String.format("%07d", 1000 + i));
             patient.setRole(RoleUser.PATIENT);
-            patient.setAdresse("Rue " + (i + 1) + ", Quartier Médina");
+            coordonnees.setAdresse("Rue " + (i + 1) + ", Quartier Médina");
+            patient.setCoordonnees(coordonnees);
             patient.setLatitude(14.70 + i * 0.01);
             patient.setLongitude(-17.45 + i * 0.01);
 

@@ -27,18 +27,4 @@ public class Patient extends User {
     @OneToMany(mappedBy = "patient")
     private List<RendezVous> rendezVous;
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
-    }
-
-    @Override
-    public String getPassword() {
-        return "";
-    }
-
-    @Override
-    public String getUsername() {
-        return "";
-    }
 }

@@ -28,7 +28,6 @@ public class ExamenCliniqueDTO {
         dto.setTemperature(entity.getTemperature());
         dto.setFrequenceCardiaque(entity.getFrequenceCardiaque());
         dto.setSaturationOxygene(entity.getSaturationOxygene());
-        dto.setBilanPhysique(entity.getBilanPhysique());
         dto.setObservations(entity.getObservations());
         return dto;
     }
@@ -42,7 +41,6 @@ public class ExamenCliniqueDTO {
         entity.setTemperature(dto.getTemperature());
         entity.setFrequenceCardiaque(dto.getFrequenceCardiaque());
         entity.setSaturationOxygene(dto.getSaturationOxygene());
-        entity.setBilanPhysique(dto.getBilanPhysique());
         entity.setObservations(dto.getObservations());
         return entity;
     }

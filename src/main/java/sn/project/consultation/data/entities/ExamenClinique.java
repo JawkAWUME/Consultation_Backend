@@ -1,5 +1,6 @@
 package sn.project.consultation.data.entities;
 
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embeddable;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,7 +18,11 @@ public class ExamenClinique {
     private Double temperature;
     private Integer frequenceCardiaque;
     private Integer saturationOxygene;
-    private Map<String,String> bilanPhysique;
-    private List<String> observations;
 
+    @ElementCollection
+    private List<ElementBilanPhysique> bilanPhysique;
+
+    @ElementCollection
+    private List<String> observations;
 }
+

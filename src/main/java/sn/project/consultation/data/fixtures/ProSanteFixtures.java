@@ -1,6 +1,7 @@
 package sn.project.consultation.data.fixtures;
 
 
+import sn.project.consultation.data.entities.Coordonnees;
 import sn.project.consultation.data.entities.ProSante;
 import sn.project.consultation.data.enums.RoleUser;
 import sn.project.consultation.data.repositories.ProSanteRepository;
@@ -46,9 +47,11 @@ public class ProSanteFixtures implements CommandLineRunner {
             ProSante pro = new ProSante();
             pro.setNom(nom);
             pro.setPrenom(prenom);
-            pro.setEmail((prenom + "." + nom + "@santeado.com").toLowerCase());
+            Coordonnees coordonnees = new Coordonnees();
+            coordonnees.setEmail((prenom + "." + nom + "@santeado.com").toLowerCase());
             pro.setMotDePasse("securepass456"); // à encoder si nécessaire
-            pro.setNumeroTelephone("78" + String.format("%07d", 2000 + i));
+            coordonnees.setNumeroTelephone("78" + String.format("%07d", 2000 + i));
+            pro.setCoordonnees(coordonnees);
             pro.setRole(RoleUser.PROFESSIONNEL_SANTE);
             pro.setSpecialite(specialite);
             pro.setDescription("Médecin spécialisé en " + specialite.toLowerCase() + " avec plus de " + (3 + i % 5) + " ans d'expérience.");

@@ -27,18 +27,5 @@ public class ProSante extends User {
     @OneToMany(mappedBy = "prosante")
     private List<Evaluation> evaluations;
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
-    }
 
-    @Override
-    public String getPassword() {
-        return "";
-    }
-
-    @Override
-    public String getUsername() {
-        return "";
-    }
 }

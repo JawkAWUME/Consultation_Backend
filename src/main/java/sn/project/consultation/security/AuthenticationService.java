@@ -9,10 +9,7 @@ import org.springframework.stereotype.Service;
 import sn.project.consultation.api.dto.AuthenticationRequest;
 import sn.project.consultation.api.dto.AuthenticationResponse;
 import sn.project.consultation.api.dto.RegisterRequest;
-import sn.project.consultation.data.entities.Coordonnees;
-import sn.project.consultation.data.entities.Patient;
-import sn.project.consultation.data.entities.ProSante;
-import sn.project.consultation.data.entities.User;
+import sn.project.consultation.data.entities.*;
 import sn.project.consultation.data.enums.RoleUser;
 import sn.project.consultation.data.repositories.UserRepository;
 
@@ -52,15 +49,16 @@ public class AuthenticationService {
         }
 
         userRepository.save(user);
-        String jwtToken = jwtService.generateToken(user); // User est de type UserDetails
+        String jwtToken = jwtService.generateToken(new CustomUserDetails(user));
+        // User est de type UserDetails
         return new AuthenticationResponse(jwtToken);
     }
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getMotDePasse())
         );
-        User user = userRepository.findByEmail(request.getEmail());
-        String jwtToken = jwtService.generateToken(user);
+        User user = userRepository.findByCoordonneesEmail(request.getEmail());
+        String jwtToken = jwtService.generateToken(new CustomUserDetails(user));
         return new AuthenticationResponse(jwtToken);
     }
 }

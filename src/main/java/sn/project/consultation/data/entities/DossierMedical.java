@@ -40,6 +40,18 @@ public class DossierMedical {
     @Embedded
     private DiagnosticMedical diagnosticMedical;
 
+    @Embedded
+    private TraitementPrescription traitements;
+
+    @OneToOne(mappedBy = "dossierMedical", cascade = CascadeType.ALL)
+    private EvolutionSuivi evolutionSuivi;
+
+    @Embedded
+    private Correspondances correspondances;
+
+    @OneToMany(mappedBy = "dossier", cascade = CascadeType.ALL)
+    private List<FichierMedical> documentsAnnexes;
+
     @OneToMany(mappedBy = "dossier", cascade = CascadeType.ALL)
     private List<HistoriqueConsultation> historiques;
 

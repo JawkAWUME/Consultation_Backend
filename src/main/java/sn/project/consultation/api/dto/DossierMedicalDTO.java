@@ -16,11 +16,21 @@ import java.util.stream.Collectors;
 @Data
 public class DossierMedicalDTO {
     private Long id;
-    private PatientDTO patient;
     private String resume;
-    private List<DocumentDTO> documents;
-    private List<HistoriqueConsultationDTO> historiques;
+    private PatientDTO patient;
+    private String couvertureSociale;
+    private String personneUrgence;
+    private String telPersonneUrgence;
     private AntecedentsDTO antecedents;
+    private ExamenCliniqueDTO examenClinique;
+    private ExamensComplementairesDTO examensComplementaires;
+    private DiagnosticMedicalDTO diagnosticMedical;
+    private TraitementPrescriptionDTO traitements;
+    private EvolutionSuiviDTO evolutionSuivi;
+    private CorrespondancesDTO correspondances;
+    private List<DocumentDTO> documents;
+    private List<FichierMedicalDTO> documentsAnnexes;
+    private List<HistoriqueConsultationDTO> historiques;
 
     public static DossierMedicalDTO fromEntity(DossierMedical dossier) {
         if (dossier == null) {
