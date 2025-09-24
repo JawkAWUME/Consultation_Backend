@@ -27,5 +27,7 @@ public class Message {
 
     private LocalDateTime dateEnvoi;
 
+    private String source;
+
     // Getters et setters
 }

@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 public class RendezVousDTO {
     private Long id;
     private PatientDTO patient;
-    private ProSanteDTO professionnel;
+    private ProSanteDTO proSante;
     private LocalDateTime dateHeure;
     private String statut;
 
@@ -26,7 +26,7 @@ public class RendezVousDTO {
         RendezVousDTO dto = new RendezVousDTO();
         dto.setId(entity.getId());
         dto.setPatient(PatientDTO.fromEntity(entity.getPatient()));
-        dto.setProfessionnel(ProSanteDTO.fromEntity(entity.getProsante()));
+        dto.setProSante(ProSanteDTO.fromEntity(entity.getProsante()));
         dto.setDateHeure(entity.getDateHeure());
         dto.setStatut(entity.getStatut());
 
@@ -41,7 +41,7 @@ public class RendezVousDTO {
         RendezVous entity = new RendezVous();
         entity.setId(dto.getId());
         entity.setPatient(PatientDTO.toEntity(dto.getPatient()));
-        entity.setProsante(ProSanteDTO.toEntity(dto.getProfessionnel()));
+        entity.setProsante(ProSanteDTO.toEntity(dto.getProSante()));
         entity.setDateHeure(dto.getDateHeure());
         entity.setStatut(dto.getStatut());
 

@@ -1,16 +1,19 @@
 package sn.project.consultation.data.entities;
 
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
 
+@MappedSuperclass
 @Getter
 @Setter
 public abstract class CorrespondanceMedicale {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private LocalDate dateRedaction;
     @ManyToOne
     @JoinColumn(name = "auteur_id")
@@ -24,3 +27,4 @@ public abstract class CorrespondanceMedicale {
     @JoinColumn(name = "patient_id")
     private Patient patient; // identifiant du patient concerné
 }
+

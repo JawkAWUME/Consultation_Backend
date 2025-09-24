@@ -1,21 +1,28 @@
 package sn.project.consultation.data.entities;
 
 
-import jakarta.persistence.Embeddable;
-import jakarta.persistence.Embedded;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-@Embeddable
+@Entity
 @Getter
 @Setter
 public class Correspondances {
-    @Embedded
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "compte_rendu_hospitalisation_id")
     private CompteRenduHospitalisation compteRenduHospitalisation;
 
-    @Embedded
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "compte_rendu_operatoire_id")
     private CompteRenduOperatoire compteRenduOperatoire;
 
-    @Embedded
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "lettre_confrere_id")
     private LettreConfrere lettreConfrere;
 }

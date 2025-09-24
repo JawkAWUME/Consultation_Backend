@@ -13,6 +13,7 @@ public interface RendezVousService {
     RendezVous modifierRendezVous(Long id, RendezVousDTO dto);
     void annulerRendezVous(Long id);
     List<RendezVousDTO> listerRendezVousParPatient(Long patientId);
+    List<RendezVousDTO> listerRendezVousParPro(Long proSanteId);
     List<ProSanteDTO> rechercherProfessionnels(RechercheProDTO criteres);
     TourneeOptimiseeDTO optimiserTournee(Long professionnelId);
     void envoyerRappels();

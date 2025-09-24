@@ -2,8 +2,10 @@ package sn.project.consultation.api.dto;
 
 import lombok.Getter;
 import lombok.Setter;
+import sn.project.consultation.data.entities.ElementBilanPhysique;
 import sn.project.consultation.data.entities.ExamenClinique;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +18,7 @@ public class ExamenCliniqueDTO {
     private Double temperature;
     private Integer frequenceCardiaque;
     private Integer saturationOxygene;
-    private Map<String, String> bilanPhysique;
+    private List<Map<String, String>> bilanPhysique;
     private List<String> observations;
 
     public static ExamenCliniqueDTO toDTO(ExamenClinique entity) {
@@ -42,6 +44,15 @@ public class ExamenCliniqueDTO {
         entity.setFrequenceCardiaque(dto.getFrequenceCardiaque());
         entity.setSaturationOxygene(dto.getSaturationOxygene());
         entity.setObservations(dto.getObservations());
+        if (dto.getBilanPhysique() != null) {
+            List<ElementBilanPhysique> bilan = new ArrayList<>();
+            for (Map<String, String> map : dto.getBilanPhysique()) {
+                for (Map.Entry<String, String> entry : map.entrySet()) {
+                    bilan.add(new ElementBilanPhysique(entry.getKey(), entry.getValue()));
+                }
+            }
+            entity.setBilanPhysique(bilan);
+        }
         return entity;
     }
 

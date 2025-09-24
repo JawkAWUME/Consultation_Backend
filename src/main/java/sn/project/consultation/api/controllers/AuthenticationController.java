@@ -6,13 +6,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import sn.project.consultation.api.dto.AuthenticationRequest;
 import sn.project.consultation.api.dto.AuthenticationResponse;
 import sn.project.consultation.api.dto.RegisterRequest;
+import sn.project.consultation.api.dto.UserDTO;
+import sn.project.consultation.data.entities.User;
 import sn.project.consultation.security.AuthenticationService;
 
 @RestController
@@ -44,4 +43,12 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest request) {
         return ResponseEntity.ok(authenticationService.authenticate(request));
     }
+
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDTO> getCurrentUser() {
+        System.out.println(authenticationService.getCurrentUser());
+        return ResponseEntity.ok(authenticationService.getCurrentUser());
+    }
+
 }

@@ -1,6 +1,5 @@
 package sn.project.consultation.data.fixtures;
 
-
 import sn.project.consultation.data.entities.Coordonnees;
 import sn.project.consultation.data.entities.ProSante;
 import sn.project.consultation.data.enums.RoleUser;
@@ -39,6 +38,16 @@ public class ProSanteFixtures implements CommandLineRunner {
                 "Dermatologue", "Ophtalmologue", "Orthopédiste", "ORL", "Neurologue"
         };
 
+        // Quartiers de Dakar avec leurs coordonnées approximatives (lat, lng)
+        double[][] quartiers = {
+                {14.73, -17.44}, // Almadies
+                {14.72, -17.47}, // Ouakam
+                {14.68, -17.46}, // Fann
+                {14.69, -17.45}, // Plateau
+                {14.71, -17.44}, // Mermoz
+                {14.70, -17.46}  // Médina
+        };
+
         for (int i = 0; i < nomsPrenoms.length; i++) {
             String nom = nomsPrenoms[i][0];
             String prenom = nomsPrenoms[i][1];
@@ -52,12 +61,22 @@ public class ProSanteFixtures implements CommandLineRunner {
             pro.setMotDePasse("securepass456"); // à encoder si nécessaire
             coordonnees.setNumeroTelephone("78" + String.format("%07d", 2000 + i));
             pro.setCoordonnees(coordonnees);
-            pro.setRole(RoleUser.PROFESSIONNEL_SANTE);
+            pro.setRole(RoleUser.PRO_SANTE);
             pro.setSpecialite(specialite);
             pro.setDescription("Médecin spécialisé en " + specialite.toLowerCase() + " avec plus de " + (3 + i % 5) + " ans d'expérience.");
             pro.setTarif(10000.0 + (i * 1000));
-            pro.setLatitude(14.70 + (i * 0.005));
-            pro.setLongitude(-17.45 + (i * 0.005));
+
+            // Choix du quartier selon l'index modulo la taille du tableau quartiers
+            int quartierIndex = i % quartiers.length;
+            double baseLat = quartiers[quartierIndex][0];
+            double baseLng = quartiers[quartierIndex][1];
+
+            // Décalage aléatoire léger pour éviter que tous soient exactement au même point
+            double offsetLat = (random.nextDouble() - 0.5) * 0.01; // ±0.005
+            double offsetLng = (random.nextDouble() - 0.5) * 0.01; // ±0.005
+
+            pro.setLatitude(baseLat + offsetLat);
+            pro.setLongitude(baseLng + offsetLng);
 
             pros.add(pro);
         }

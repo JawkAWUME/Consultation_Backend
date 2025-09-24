@@ -10,31 +10,58 @@ import sn.project.consultation.data.entities.Patient;
 import sn.project.consultation.data.entities.ProSante;
 import sn.project.consultation.data.enums.RoleUser;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class PatientDTO {
     private Long id;
     private String nom;
+    private String prenom;
+    private String sexe;
+    private String matricule;
+    private String lieuNaissance;
+    private LocalDate dateNaissance;
+    private String situationFamiliale;
+
     private String adresse;
     private String email;
+    private String telephone;
+
+    private Double latitude;
+    private Double longitude;
+
     private RoleUser role;
 
+    // ===== Conversion Entity → DTO =====
     public static PatientDTO fromEntity(Patient patient) {
         if (patient == null) {
             return null;
         }
 
+        Coordonnees coord = patient.getCoordonnees();
+
         return new PatientDTO(
                 patient.getId(),
-                patient.getNom()+" "+patient.getPrenom(),  // Assure-toi que la classe User (superclasse) a bien la méthode getNom()
-                patient.getCoordonnees().getAdresse(),
-                patient.getCoordonnees().getEmail(),
+                patient.getNom(),
+                patient.getPrenom(),
+                patient.getSexe(),
+                patient.getMatricule(),
+                patient.getLieuNaissance(),
+                patient.getDateNaissance(),
+                patient.getSituationFamiliale(),
+                coord != null ? coord.getAdresse() : null,
+                coord != null ? coord.getEmail() : null,
+                coord != null ? coord.getNumeroTelephone() : null,
+                patient.getLatitude(),
+                patient.getLongitude(),
                 patient.getRole()
-                // distanceKm sera probablement calculée ailleurs
         );
     }
 
+    // ===== Conversion DTO → Entity =====
     public static Patient toEntity(PatientDTO dto) {
         if (dto == null) {
             return null;
@@ -42,16 +69,22 @@ public class PatientDTO {
 
         Patient patient = new Patient();
         patient.setId(dto.getId());
-
-        // Séparation du nom et prénom si possible
-        String[] parts = dto.getNom() != null ? dto.getNom().split(" ", 2) : new String[]{"", ""};
-        patient.setNom(parts[0]);
-        patient.setPrenom(parts.length > 1 ? parts[1] : "");
-        Coordonnees coordonnees = new Coordonnees();
-        coordonnees.setAdresse(dto.getAdresse());
-        coordonnees.setEmail(dto.getEmail());
-        patient.setCoordonnees(coordonnees);
+        patient.setNom(dto.getNom());
+        patient.setPrenom(dto.getPrenom());
+        patient.setSexe(dto.getSexe());
+        patient.setMatricule(dto.getMatricule());
+        patient.setLieuNaissance(dto.getLieuNaissance());
+        patient.setDateNaissance(dto.getDateNaissance());
+        patient.setSituationFamiliale(dto.getSituationFamiliale());
+        patient.setLatitude(dto.getLatitude());
+        patient.setLongitude(dto.getLongitude());
         patient.setRole(dto.getRole());
+
+        Coordonnees coord = new Coordonnees();
+        coord.setAdresse(dto.getAdresse());
+        coord.setEmail(dto.getEmail());
+        coord.setNumeroTelephone(dto.getTelephone());
+        patient.setCoordonnees(coord);
 
         return patient;
     }

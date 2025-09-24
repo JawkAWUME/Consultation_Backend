@@ -4,9 +4,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sn.project.consultation.api.dto.ApiResponseDTO;
 import sn.project.consultation.api.dto.MessageDTO;
 import sn.project.consultation.api.dto.PlanificationDTO;
 import sn.project.consultation.api.dto.TeleconsultationDTO;
@@ -14,6 +18,7 @@ import sn.project.consultation.data.entities.Message;
 import sn.project.consultation.data.entities.Teleconsultation;
 import sn.project.consultation.services.impl.TeleconsultationService;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -71,6 +76,27 @@ public class TeleconsultationController {
     public ResponseEntity<List<Message>> getMessages(@PathVariable Long id) {
         List<Message> messages = teleconsultationService.getMessages(id);
         return ResponseEntity.ok(messages);
+    }
+
+    @PostMapping("/messages/log")
+    public ResponseEntity<ApiResponseDTO> saveJitsiLog(@Valid @RequestBody MessageDTO dto) {
+        try {
+            Message saved = teleconsultationService.saveLogMessage(dto);
+            URI location = URI.create(String.format("/api/messages/%d", saved.getId()));
+
+            ApiResponseDTO response = new ApiResponseDTO(true, "Message log enregistré avec succès", saved.getId());
+            return ResponseEntity.created(location).body(response);
+        } catch (EntityNotFoundException ex) {
+            ApiResponseDTO response = new ApiResponseDTO();
+            response.setSuccess(false);
+            response.setMessage("Téléconsultation ou expéditeur introuvable : "+ ex.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception ex) {
+            ApiResponseDTO response = new ApiResponseDTO();
+            response.setSuccess(false);
+            response.setMessage("Erreur serveur : "+ex.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
 }

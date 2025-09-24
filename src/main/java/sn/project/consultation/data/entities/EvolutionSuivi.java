@@ -17,14 +17,18 @@ public class EvolutionSuivi {
     private Long id;
 
     @ElementCollection
+    @OrderColumn(name = "position_note")
     private List<String> notesEvolution;
 
     @OneToMany(mappedBy = "evolutionSuivi", cascade = CascadeType.ALL)
+    @OrderColumn(name= "position_courbe")
     private List<CourbeClinique> courbes;
 
     @ElementCollection
+    @OrderColumn(name = "position_consultation")
     private List<ConsultationSuivi> consultationsSuivi;
 
     @OneToOne
     private DossierMedical dossierMedical;
+
 }

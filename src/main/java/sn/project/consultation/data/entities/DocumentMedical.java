@@ -14,6 +14,8 @@ public class DocumentMedical {
     private String nom;
     private String urlStockage;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "dossier_id", nullable = false)
     private DossierMedical dossier;
+
 }

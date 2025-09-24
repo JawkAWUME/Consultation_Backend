@@ -5,7 +5,11 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -17,16 +21,16 @@ public class DossierMedical {
     private Long id;
 
     private String resume;
-
+    private LocalDate date;
     @ManyToOne
     private Patient patient;
+
+    @ManyToOne
+    private ProSante proSante;
 
     private String couvertureSociale;
     private String personneUrgence;
     private String telPersonneUrgence;
-
-    @OneToMany(mappedBy = "dossier", cascade = CascadeType.ALL)
-    private List<DocumentMedical> documents;
 
     @Embedded
     private Antecedents antecedents;
@@ -46,13 +50,28 @@ public class DossierMedical {
     @OneToOne(mappedBy = "dossierMedical", cascade = CascadeType.ALL)
     private EvolutionSuivi evolutionSuivi;
 
-    @Embedded
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "correspondances_id")
     private Correspondances correspondances;
 
-    @OneToMany(mappedBy = "dossier", cascade = CascadeType.ALL)
-    private List<FichierMedical> documentsAnnexes;
 
-    @OneToMany(mappedBy = "dossier", cascade = CascadeType.ALL)
-    private List<HistoriqueConsultation> historiques;
+    // 📂 Documents médicaux
+    @OneToMany(mappedBy = "dossier",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    private List<FichierMedical> documents = new ArrayList<>();
 
+    // 📂 Annexes
+    @OneToMany(mappedBy = "dossier",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    private List<FichierMedical> documentsAnnexes = new ArrayList<>();
+
+    // 📜 Historique des consultations
+    @OneToMany(mappedBy = "dossier",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<HistoriqueConsultation> historiques = new ArrayList<>();
 }

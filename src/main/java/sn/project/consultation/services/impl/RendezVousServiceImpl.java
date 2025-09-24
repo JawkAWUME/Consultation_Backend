@@ -2,6 +2,7 @@ package sn.project.consultation.services.impl;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import sn.project.consultation.api.dto.*;
@@ -31,6 +32,7 @@ public class RendezVousServiceImpl implements RendezVousService {
     @Autowired private ProSanteRepository proRepo;
 
     @Autowired private SmsService smsService;
+    @Autowired SimpMessagingTemplate messagingTemplate;
     @Autowired private EmailService emailService;
 
     @Scheduled(fixedRate = 60000) // Exécuté toutes les minutes
@@ -50,7 +52,7 @@ public class RendezVousServiceImpl implements RendezVousService {
                 String contenu = "Bonjour " + nom + ", ceci est un rappel pour votre rendez-vous prévu le " + date;
 
                 emailService.envoyerEmail("jawkstwitter@gmail.com", "Rappel de rendez-vous", contenu);
-
+                messagingTemplate.convertAndSend("/topic/rappel", new NotificationDTO("Rappel envoyé pour le"+ date));
                 // Marquer comme rappelé si tu veux éviter les doublons (ex : en base de données ou via Redis)
             }
         }
@@ -79,22 +81,24 @@ public class RendezVousServiceImpl implements RendezVousService {
         RendezVous rdv = new RendezVous();
         rdv.setDateHeure(dto.getDateHeure());
         rdv.setStatut("EN_ATTENTE");
-        String[] parts = dto.getPatient() != null ? dto.getPatient().split(" ", 2) : new String[]{"", ""};
-        Patient patient =patientRepo.findByNomIgnoreCaseAndPrenomIgnoreCase(parts[0], parts[1]).get();
-        String[] parts1 = dto.getProfessionnel() != null ? dto.getProfessionnel().split(" ", 2) : new String[]{"", ""};
-        ProSante proSante = proRepo.findByNomIgnoreCaseAndPrenomIgnoreCase(parts1[0],parts1[1]).get();
+//        String[] parts = dto.getPatient() != null ? dto.getPatient().split(" ", 2) : new String[]{"", ""};
+        System.out.println(dto);
+        Patient patient = patientRepo.findByNomIgnoreCaseAndPrenomIgnoreCase(dto.getPatient().getNom(), dto.getPatient().getPrenom());
+//        String[] parts1 = dto.getProfessionnel() != null ? dto.getProfessionnel().split(" ", 2) : new String[]{"", ""};
+        ProSante proSante = proRepo.findByNomIgnoreCaseAndPrenomIgnoreCase(dto.getProSante().getNom(), dto.getProSante().getPrenom());
         rdv.setPatient(patient);
         rdv.setProsante(proSante);
+        System.out.println(rdv.getPatient().getId());
         repo.save(rdv);
         dto.setId(rdv.getId());
 
         // ✅ Si le rendez-vous est dans les 24h => envoyer une alerte au Pro
-        if (dto.getDateHeure().isBefore(LocalDateTime.now().plusHours(24))) {
-            String msg = "🔴 Nouveau rendez-vous urgent de " + patient.getNom()
-                    + " prévu à " + dto.getDateHeure();
-            emailService.envoyerEmail(rdv.getProsante().getCoordonnees().getEmail(), "Rendez-vous urgent", msg);
-            smsService.envoyerSms(rdv.getProsante().getCoordonnees().getNumeroTelephone(), msg);
-        }
+//        if (dto.getDateHeure().isBefore(LocalDateTime.now().plusHours(24))) {
+//            String msg = "🔴 Nouveau rendez-vous urgent de " + patient.getNom()
+//                    + " prévu à " + dto.getDateHeure();
+//            emailService.envoyerEmail(rdv.getProsante().getCoordonnees().getEmail(), "Rendez-vous urgent", msg);
+////            smsService.envoyerSms(rdv.getProsante().getCoordonnees().getNumeroTelephone(), msg);
+//        }
         return dto;
     }
 
@@ -147,7 +151,20 @@ public class RendezVousServiceImpl implements RendezVousService {
             dto.setDateHeure(rdv.getDateHeure());
             dto.setStatut(rdv.getStatut());
             dto.setPatient(PatientDTO.fromEntity(rdv.getPatient()));
-            dto.setProfessionnel(ProSanteDTO.fromEntity(rdv.getProsante()));
+            dto.setProSante(ProSanteDTO.fromEntity(rdv.getProsante()));
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<RendezVousDTO> listerRendezVousParPro(Long proSanteId) {
+        return repo.findByProsanteId(proSanteId).stream().map(rdv -> {
+            RendezVousDTO dto = new RendezVousDTO();
+            dto.setId(rdv.getId());
+            dto.setDateHeure(rdv.getDateHeure());
+            dto.setStatut(rdv.getStatut());
+            dto.setPatient(PatientDTO.fromEntity(rdv.getPatient()));
+            dto.setProSante(ProSanteDTO.fromEntity(rdv.getProsante()));
             return dto;
         }).collect(Collectors.toList());
     }
@@ -163,6 +180,7 @@ public class RendezVousServiceImpl implements RendezVousService {
                     ProSanteDTO dto = new ProSanteDTO();
                     dto.setId(p.getId());
                     dto.setNom(p.getNom());
+                    dto.setPrenom(p.getPrenom());
                     dto.setSpecialite(p.getSpecialite());
                     dto.setTarif(p.getTarif());
                     dto.setLatitude(p.getLatitude());
@@ -193,7 +211,7 @@ public class RendezVousServiceImpl implements RendezVousService {
                 RendezVousDTO dto = new RendezVousDTO();
                 dto.setId(r.getId());
                 dto.setPatient(PatientDTO.fromEntity(r.getPatient()));
-                dto.setProfessionnel(ProSanteDTO.fromEntity(r.getProsante()));
+                dto.setProSante(ProSanteDTO.fromEntity(r.getProsante()));
                 dto.setDateHeure(r.getDateHeure());
                 dto.setStatut(r.getStatut());
                 return dto;
@@ -223,7 +241,7 @@ public class RendezVousServiceImpl implements RendezVousService {
                     RendezVousDTO dto = new RendezVousDTO();
                     dto.setId(r.getId());
                     dto.setPatient(PatientDTO.fromEntity(r.getPatient()));
-                    dto.setProfessionnel(ProSanteDTO.fromEntity(r.getProsante()));
+                    dto.setProSante(ProSanteDTO.fromEntity(r.getProsante()));
                     dto.setDateHeure(r.getDateHeure());
                     dto.setStatut(r.getStatut());
                     ordonnes.add(dto);

@@ -9,4 +9,5 @@ import java.util.List;
 
 public interface FactureRepository extends JpaRepository<Facture, Long> {
     List<Facture> findByPaiement_PatientOrderByDateEmissionDesc(Patient patient);
+    List<Facture> findByPaiement_Patient_Id(Long patientId);
 }

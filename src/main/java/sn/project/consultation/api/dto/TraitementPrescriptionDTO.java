@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public class TraitementPrescriptionDTO {
 
     private List<MedicamentPrescritDTO> medicaments;
-    private List<SoinsParamedicauxDTO> soins;
+    private List<SoinsParamedicauxDTO> soinsParamedicaux;
     private List<InterventionChirurgicaleDTO> interventions;
 
     public static TraitementPrescriptionDTO toDTO(TraitementPrescription entity) {
@@ -28,7 +28,7 @@ public class TraitementPrescriptionDTO {
                         .collect(Collectors.toList())
         );
 
-        dto.setSoins(
+        dto.setSoinsParamedicaux(
                 entity.getSoins()
                         .stream()
                         .map(SoinsParamedicauxDTO::toDTO)
@@ -58,7 +58,7 @@ public class TraitementPrescriptionDTO {
         );
 
         entity.setSoins(
-                dto.getSoins()
+                dto.getSoinsParamedicaux()
                         .stream()
                         .map(SoinsParamedicauxDTO::toEntity)
                         .collect(Collectors.toList())

@@ -75,6 +75,16 @@ public class RendezVousController {
         }
     }
 
+    @GetMapping("/pro/{id}")
+    public ResponseEntity<List<RendezVousDTO>> listerPro(@PathVariable Long id) {
+        List<RendezVousDTO> liste = service.listerRendezVousParPro(id);
+        if (liste.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.ok(liste);
+        }
+    }
+
     // ✅ Modification d’un rendez-vous
     @Operation(summary = "Modifier un rendez-vous")
     @ApiResponses(value = {

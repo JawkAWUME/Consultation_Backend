@@ -13,6 +13,7 @@ import sn.project.consultation.data.enums.RoleUser;
 public class ProSanteDTO {
     private Long id;
     private String nom;
+    private String prenom;
     private String specialite;
     private String role;
 
@@ -28,8 +29,9 @@ public class ProSanteDTO {
 
         ProSanteDTO dto = new ProSanteDTO();
         dto.setId(proSante.getId());
-                dto.setNom(proSante.getNom()+" "+proSante.getPrenom());  // Assure-toi que la classe User (superclasse) a bien la méthode getNom()
-                dto.setSpecialite(proSante.getSpecialite());
+                dto.setNom(proSante.getNom());  // Assure-toi que la classe User (superclasse) a bien la méthode getNom()
+                dto.setPrenom(proSante.getPrenom());
+        dto.setSpecialite(proSante.getSpecialite());
         dto.setTarif(proSante.getTarif());
                 dto.setLatitude(proSante.getLatitude());
         dto.setLongitude(proSante.getLongitude());

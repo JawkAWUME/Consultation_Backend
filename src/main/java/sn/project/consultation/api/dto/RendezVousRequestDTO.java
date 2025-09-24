@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 @Setter
 public class RendezVousRequestDTO {
     private Long id;
-    private String patient;
-    private String professionnel;
+    private PatientDTO patient;
+    private ProSanteDTO proSante;
     private LocalDateTime dateHeure;
     private String statut;
 }

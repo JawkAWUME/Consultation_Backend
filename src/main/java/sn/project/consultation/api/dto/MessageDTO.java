@@ -18,11 +18,10 @@ import java.util.stream.Collectors;
 public class MessageDTO {
     private Long teleconsultationId;
     private Long expediteurId;
-    private String expediteurType; // "PATIENT" ou "PRO_SANTE"
+    private String expediteurType; // "PATIENT", "PRO_SANTE", ou null
     private String contenu;
-    private String type;           // "TEXTE", "DOCUMENT"
-    private String documentUrl;    // si type == DOCUMENT
     private LocalDateTime dateEnvoi;
+    private String source; // "JITSI", "APP", "SYSTEM", etc.
 
     public static MessageDTO fromEntity(Message entity) {
         if (entity == null) {
@@ -34,15 +33,7 @@ public class MessageDTO {
         dto.setExpediteurId(entity.getExpediteur() != null ? entity.getExpediteur().getId() : null);
         dto.setContenu(entity.getContenu());
         dto.setDateEnvoi(entity.getDateEnvoi());
-
-        // Déduire le type de message
-        if (entity.getContenu() != null && entity.getContenu().startsWith("http")) {
-            dto.setType("DOCUMENT");
-            dto.setDocumentUrl(entity.getContenu());
-        } else {
-            dto.setType("TEXTE");
-            dto.setDocumentUrl(null);
-        }
+        dto.setSource(entity.getSource());
 
         // Déduire le type d’expéditeur selon l’instance
         if (entity.getExpediteur() instanceof ProSante) {
@@ -61,16 +52,15 @@ public class MessageDTO {
 
         Message entity = new Message();
         entity.setDateEnvoi(dto.getDateEnvoi());
-        entity.setContenu(dto.getType() != null && dto.getType().equals("DOCUMENT") ? dto.getDocumentUrl() : dto.getContenu());
+        entity.setContenu(dto.getContenu());
+        entity.setSource(dto.getSource());
 
-        // Reconstruire la téléconsultation
         if (dto.getTeleconsultationId() != null) {
             Teleconsultation t = new Teleconsultation();
             t.setId(dto.getTeleconsultationId());
             entity.setTeleconsultation(t);
         }
 
-        // Choisir la bonne classe pour l’expéditeur
         if ("PATIENT".equalsIgnoreCase(dto.getExpediteurType())) {
             Patient patient = new Patient();
             patient.setId(dto.getExpediteurId());

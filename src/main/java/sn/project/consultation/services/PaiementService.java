@@ -7,18 +7,21 @@ import sn.project.consultation.data.entities.Facture;
 import sn.project.consultation.data.entities.Paiement;
 import sn.project.consultation.data.entities.Patient;
 import sn.project.consultation.data.entities.ProSante;
+import sn.project.consultation.data.repositories.FactureRepository;
 import sn.project.consultation.data.repositories.PaiementRepository;
 import sn.project.consultation.data.repositories.PatientRepository;
 import sn.project.consultation.data.repositories.ProSanteRepository;
 import sn.project.consultation.services.impl.SmsService;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class PaiementService {
 
     @Autowired
     private PaiementRepository paiementRepo;
+    @Autowired FactureRepository factureRepo;
     @Autowired private FactureService factureService;
     @Autowired private PatientRepository patientRepo;
     @Autowired private ProSanteRepository proRepo;
@@ -28,8 +31,8 @@ public class PaiementService {
 
     // ✅ Traitement intelligent du paiement
     public Facture effectuerPaiement(PaiementRequestDTO dto) {
-        Patient patient = patientRepo.findById(dto.getPatientId()).orElseThrow();
-        ProSante pro = proRepo.findById(dto.getProfessionnelId()).orElseThrow();
+        Patient patient = patientRepo.findById(dto.getPatient().getId()).orElseThrow();
+        ProSante pro = proRepo.findById(dto.getProfessionnel().getId()).orElseThrow();
 
         // 🔐 Contrôle anti-fraude : 3 paiements échoués en 1h
         if (paiementRepo.countFailuresRecentes(patient.getId(), LocalDateTime.now().minusHours(1)) >= 3) {
@@ -57,6 +60,10 @@ public class PaiementService {
         envoyerRecuMultiCanal(patient, facture);
 
         return facture;
+    }
+
+    public Double getMontantAPayer(Long patientId) {
+        return paiementRepo.getMontantRestantByPatient(patientId);
     }
 
     // 🔁 Déduction méthode préférée du patient

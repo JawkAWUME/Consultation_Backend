@@ -6,5 +6,5 @@ import sn.project.consultation.data.entities.Patient;
 import java.util.Optional;
 
 public interface PatientRepository extends JpaRepository<Patient, Long> {
-    Optional<Patient> findByNomIgnoreCaseAndPrenomIgnoreCase(String nom, String prenom);
+  Patient findByNomIgnoreCaseAndPrenomIgnoreCase(String nom, String prenom);
 }

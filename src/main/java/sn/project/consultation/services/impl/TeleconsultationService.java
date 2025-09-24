@@ -2,9 +2,8 @@ package sn.project.consultation.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import sn.project.consultation.data.entities.Message;
-import sn.project.consultation.data.entities.Teleconsultation;
-import sn.project.consultation.data.entities.User;
+import sn.project.consultation.api.dto.MessageDTO;
+import sn.project.consultation.data.entities.*;
 import sn.project.consultation.data.repositories.*;
 
 import java.time.LocalDateTime;
@@ -73,6 +72,25 @@ public class TeleconsultationService {
         return base + identifiant;
     }
 
+    public Message saveLogMessage(MessageDTO dto) {
+        Message message = MessageDTO.toEntity(dto);
+        Teleconsultation teleconsultation = teleconsultationRepo.findById(dto.getTeleconsultationId())
+                .orElseThrow(() -> new RuntimeException("Téléconsultation non trouvée"));
+
+        message.setTeleconsultation(teleconsultation);
+
+        if ("PATIENT".equalsIgnoreCase(dto.getExpediteurType())) {
+            Patient p = patientRepo.findById(dto.getExpediteurId())
+                    .orElseThrow(() -> new RuntimeException("Patient introuvable"));
+            message.setExpediteur(p);
+        } else if ("PRO_SANTE".equalsIgnoreCase(dto.getExpediteurType())) {
+            ProSante pro = proRepo.findById(dto.getExpediteurId())
+                    .orElseThrow(() -> new RuntimeException("Professionnel de Santé Introuvable"));
+            message.setExpediteur(pro);
+        }
+
+        return messageRepo.save(message);
+    }
     // (Optionnel) ✅ Annulation de téléconsultation
     public void annulerTeleconsultation(Long consultationId, Long demandeurId) {
         Teleconsultation tc = teleconsultationRepo.findById(consultationId).orElseThrow();

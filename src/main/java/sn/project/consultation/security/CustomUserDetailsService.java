@@ -19,7 +19,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepo.findByCoordonneesEmail(email);
+        User user = userRepo.findByEmail(email);
 
         return new org.springframework.security.core.userdetails.User(
                 user.getCoordonnees().getEmail(),

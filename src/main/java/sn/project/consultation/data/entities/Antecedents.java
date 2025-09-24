@@ -1,11 +1,10 @@
 package sn.project.consultation.data.entities;
-
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.OneToOne;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.util.List;
 
@@ -16,22 +15,29 @@ public class Antecedents {
 
     // Antécédents personnels
     @ElementCollection
-    private List<String> antecedentsMedicaux;
-
-    @ElementCollection// Exemple : Diabète, hypertension...
-    private List<String> antecedentsChirurgicaux;  // Exemple : Appendicectomie...
+    @Fetch(FetchMode.SUBSELECT)
+    private List<String> antecedentsMedicaux; // Exemple : Diabète, hypertension...
 
     @ElementCollection
-    private List<String> antecedentsObstetricaux;  // Surtout pour les patientes
+    @Fetch(FetchMode.SUBSELECT)
+    private List<String> antecedentsChirurgicaux; // Exemple : Appendicectomie...
 
     @ElementCollection
+    @Fetch(FetchMode.SUBSELECT)
+    private List<String> antecedentsObstetricaux; // Surtout pour les patientes
+
+    @ElementCollection
+    @Fetch(FetchMode.SUBSELECT)
     private List<String> antecedentsPsychologiques;
-    // Antécédents familiaux
 
+    // Antécédents familiaux
     @ElementCollection
-    private List<String> maladiesFamiliales;       // Exemple : Antécédents familiaux de cancer, diabète...
+    @Fetch(FetchMode.SUBSELECT)
+    private List<String> maladiesFamiliales; // Exemple : Cancer, diabète...
 
     // Allergies
     @ElementCollection
-    private List<String> allergies;                // Médicamenteuses, alimentaires, etc.
+    @Fetch(FetchMode.SUBSELECT)
+    private List<String> allergies; // Médicamenteuses, alimentaires, etc.
 }
+

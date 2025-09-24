@@ -7,6 +7,10 @@ import sn.project.consultation.data.entities.*;
 import sn.project.consultation.data.repositories.*;
 import sn.project.consultation.services.DossierMedicalService;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
 
 @Service
 public class DossierMedicalServiceImpl implements DossierMedicalService {
@@ -27,10 +31,40 @@ public class DossierMedicalServiceImpl implements DossierMedicalService {
         return DossierMedicalDTO.fromEntity(dossier);
     }
 
-    public DossierMedicalDTO getDossierByPatientId(Long id) {
-        return DossierMedicalDTO.fromEntity(
-                dossierRepo.findByPatientId(id).orElseThrow(() -> new RuntimeException("Dossier introuvable")));
+    public List<DossierMedicalDTO> getDossierByPatientId(Long id) {
+        return DossierMedicalDTO.fromEntities(
+                dossierRepo.findByPatientId(id));
     }
+
+    public List<DossierMedicalDTO> getDossierByProSanteId(Long id) {
+        return DossierMedicalDTO.fromEntities(
+                dossierRepo.findByProSanteId(id));
+    }
+
+    public List<DossierMedicalDTO> getDossiers() {
+        return DossierMedicalDTO.fromEntities(
+                dossierRepo.findAllWithDetails());
+
+    }
+
+    public List<DossierMedicalDTO> searchDossiers(Long patientId, LocalDate filterDate, String patientName) {
+        List<DossierMedical> dossiers;
+
+        if (patientId != null) {
+            dossiers = dossierRepo.findByPatientId(patientId);
+        } else if (filterDate != null) {
+            dossiers = dossierRepo.findByDateCreation(filterDate);
+        } else if (patientName != null && !patientName.isEmpty()) {
+            dossiers = dossierRepo.findByPatientNomContainingIgnoreCase(patientName);
+        } else {
+            dossiers = dossierRepo.findAll();
+        }
+
+        return dossiers.stream()
+                .map(DossierMedicalDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
 
     private DossierMedical getDossier(Long id) {
         return dossierRepo.findById(id).orElseThrow(() -> new RuntimeException("Dossier introuvable"));
@@ -38,16 +72,16 @@ public class DossierMedicalServiceImpl implements DossierMedicalService {
 
     // === DOCUMENTS MÉDICAUX ===
 
-    public void ajouterDocument(Long dossierId, DocumentDTO dto) {
+    public void ajouterDocument(Long dossierId, FichierMedicalDTO dto) {
         DossierMedical dossier = getDossier(dossierId);
-        DocumentMedical doc = DocumentDTO.toEntity(dto);
+        FichierMedical doc = FichierMedicalDTO.toEntity(dto);
         dossier.getDocuments().add(doc);
-        documentRepo.save(doc);
+        fichierRepo.save(doc);
     }
 
     public void ajouterFichierAnnexe(Long dossierId, FichierMedicalDTO dto) {
         DossierMedical dossier = getDossier(dossierId);
-        FichierMedical fichier = FichierMedicalDTO.toEntity(dto, dossier);
+        FichierMedical fichier = FichierMedicalDTO.toEntity(dto);
         fichierRepo.save(fichier);
     }
 
@@ -73,6 +107,14 @@ public class DossierMedicalServiceImpl implements DossierMedicalService {
     public void enregistrerExamenClinique(Long dossierId, ExamenClinique examen) {
         DossierMedical dossier = getDossier(dossierId);
         dossier.setExamenClinique(examen);
+        dossierRepo.save(dossier);
+    }
+
+    public void enregistrerInfosPrincipales(Long dossierId, InfosUrgenceDTO infos) {
+        DossierMedical dossier = getDossier(dossierId);
+        dossier.setCouvertureSociale(infos.getCouvertureSociale());
+        dossier.setTelPersonneUrgence(infos.getTelPersonneUrgence());
+        dossier.setPersonneUrgence(infos.getPersonneUrgence());
         dossierRepo.save(dossier);
     }
 
@@ -115,5 +157,7 @@ public class DossierMedicalServiceImpl implements DossierMedicalService {
         dossier.setCorrespondances(correspondances);
         dossierRepo.save(dossier);
     }
+
+
 }
 

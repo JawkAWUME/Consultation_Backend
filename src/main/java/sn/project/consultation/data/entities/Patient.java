@@ -3,6 +3,7 @@ package sn.project.consultation.data.entities;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -20,7 +21,7 @@ public class Patient extends User {
     private String matricule;
     private Double latitude;
     private String lieuNaissance;
-    private LocalDateTime dateNaissance;
+    private LocalDate dateNaissance;
     private Double longitude;
     private String situationFamiliale;
 

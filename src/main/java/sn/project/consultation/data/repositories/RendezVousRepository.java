@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
     List<RendezVous> findByPatientId(Long patientId);
+    List<RendezVous> findByProsanteId(Long proSanteId);
     List<RendezVous> findByProsanteIdAndDateHeureAfterOrderByDateHeureAsc(Long professionnelId, LocalDateTime dateHeure);
     List<RendezVous> findByDateHeureBetween(LocalDateTime start, LocalDateTime end);
     List<RendezVous> findByDateHeureBefore(LocalDateTime dateTime);

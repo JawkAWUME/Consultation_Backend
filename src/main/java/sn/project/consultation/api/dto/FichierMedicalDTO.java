@@ -29,14 +29,13 @@ public class FichierMedicalDTO {
         return dto;
     }
 
-    public static FichierMedical toEntity(FichierMedicalDTO dto, DossierMedical dossier) {
+    public static FichierMedical toEntity(FichierMedicalDTO dto) {
         FichierMedical fichier = new FichierMedical();
         fichier.setNomFichier(dto.getNomFichier());
         fichier.setTypeMime(dto.getTypeMime());
         fichier.setCheminAcces(dto.getCheminAcces());
         fichier.setDateAjout(dto.getDateAjout() != null ? dto.getDateAjout() : java.time.LocalDateTime.now());
         fichier.setTypeDocument(dto.getTypeDocument());
-        fichier.setDossier(dossier);
         return fichier;
     }
 }

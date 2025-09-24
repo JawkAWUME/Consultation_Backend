@@ -8,7 +8,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PaiementRequestDTO {
-    private Long patientId;
-    private Long professionnelId;
+    private Double montant;
+    private PatientDTO patient;
+    private ProSanteDTO professionnel;
     private String methode;
+    private String statut;
 }

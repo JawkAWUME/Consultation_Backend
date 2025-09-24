@@ -1,23 +1,23 @@
 package sn.project.consultation.services;
 
-import sn.project.consultation.api.dto.DocumentDTO;
-import sn.project.consultation.api.dto.DossierMedicalDTO;
-import sn.project.consultation.api.dto.FichierMedicalDTO;
-import sn.project.consultation.api.dto.HistoriqueConsultationDTO;
+import sn.project.consultation.api.dto.*;
 import sn.project.consultation.data.entities.*;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 public interface DossierMedicalService {
 
     // === CRUD GLOBAL ===
     DossierMedicalDTO creerDossier(Long patientId);
-    DossierMedicalDTO getDossierByPatientId(Long id);
+    List<DossierMedicalDTO> getDossierByPatientId(Long id);
+    List<DossierMedicalDTO> getDossierByProSanteId(Long id);
 
     // === DOCUMENTS MÉDICAUX ===
-    void ajouterDocument(Long dossierId, DocumentDTO dto);
+    void ajouterDocument(Long dossierId, FichierMedicalDTO dto);
     void ajouterFichierAnnexe(Long dossierId, FichierMedicalDTO dto);
-
+    void enregistrerInfosPrincipales(Long dossierId, InfosUrgenceDTO infos) ;
     // === HISTORIQUE DE CONSULTATIONS ===
     void ajouterHistorique(Long dossierId, HistoriqueConsultationDTO dto);
 
@@ -41,4 +41,6 @@ public interface DossierMedicalService {
 
     // === CORRESPONDANCES MÉDICALES ===
     void enregistrerCorrespondances(Long dossierId, Correspondances correspondances);
+    List<DossierMedicalDTO> getDossiers();
+    List<DossierMedicalDTO> searchDossiers(Long patientId, LocalDate filterDate, String patientName);
 }
