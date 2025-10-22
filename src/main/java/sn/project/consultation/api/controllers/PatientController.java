@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/patients")
-@CrossOrigin("*")
 @Tag(name = "Patients", description = "Gestion des patients")
 public class PatientController {
 
@@ -35,7 +34,6 @@ public class PatientController {
     @GetMapping("")
     public ResponseEntity<Map<String, Object>> getAllPatientsAsDTO() {
         List<Patient> patients = patientRepository.findAll();
-
         List<PatientDTO> dtoList = patients.stream()
                 .map(PatientDTO::fromEntity)
                 .collect(Collectors.toList());
@@ -43,6 +41,19 @@ public class PatientController {
         Map<String, Object> response = new HashMap<>();
         response.put("data", dtoList);
 
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Lister un patient via son id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des patients récupérée avec succès"),
+            @ApiResponse(responseCode = "500", description = "Erreur serveur")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> getPatientById(@PathVariable Long id) {
+        Patient patient = patientRepository.findById(id).orElseThrow();
+        Map<String, Object> response = new HashMap<>();
+        response.put("data", PatientDTO.fromEntity(patient));
         return ResponseEntity.ok(response);
     }
 }

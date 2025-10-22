@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import sn.project.consultation.data.entities.AnalyseBiologique;
-import sn.project.consultation.data.entities.ElementBilanPhysique;
 import sn.project.consultation.data.entities.ExamensComplementaires;
 import sn.project.consultation.data.entities.TestSpecial;
 
@@ -12,16 +11,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 @Getter
 @Setter
 @Schema(description = "Représente les examens complémentaires réalisés pour un patient")
 public class ExamensComplementairesDTO {
 
     // 🔬 Analyses biologiques
-    @Schema(description = "Résultats des analyses sanguines", example = "{\"Glycémie\": \"1.2 g/L\", \"CRP\": \"15 mg/L\"}")
+    @Schema(description = "Résultats des analyses sanguines", example = "[{\"Glycémie\": \"1.2 g/L\"}, {\"CRP\": \"15 mg/L\"}]")
     private List<Map<String, String>> analysesSanguines;
 
-    @Schema(description = "Résultats des analyses urinaires", example = "{\"Protéinurie\": \"Négatif\", \"Leucocytes\": \"Présents\"}")
+    @Schema(description = "Résultats des analyses urinaires", example = "[{\"Protéinurie\": \"Négatif\"}, {\"Leucocytes\": \"Présents\"}]")
     private List<Map<String, String>> analysesUrines;
 
     // 🖼️ Examens d’imagerie
@@ -31,7 +31,7 @@ public class ExamensComplementairesDTO {
     private List<String> irm;
 
     // ⚙️ Tests spécialisés
-    private Map<String, String> testsSpeciaux;
+    private List<Map<String, String>> testsSpeciaux; // ✅ correction ici
 
     public static ExamensComplementairesDTO toDTO(ExamensComplementaires entity) {
         if (entity == null) return null;
@@ -64,12 +64,16 @@ public class ExamensComplementairesDTO {
         dto.setEchographies(entity.getEchographies());
         dto.setScanners(entity.getScanners());
         dto.setIrm(entity.getIrm());
+
+        // Tests spéciaux
         if (entity.getTestsSpeciaux() != null) {
-            Map<String, String> testsMap = new HashMap<>();
+            List<Map<String, String>> tests = new ArrayList<>();
             for (TestSpecial test : entity.getTestsSpeciaux()) {
-                testsMap.put(test.getNom(), test.getResultat());
+                Map<String, String> map = new HashMap<>();
+                map.put(test.getNom(), test.getResultat());
+                tests.add(map);
             }
-            dto.setTestsSpeciaux(testsMap);
+            dto.setTestsSpeciaux(tests);
         }
 
         return dto;
@@ -106,10 +110,14 @@ public class ExamensComplementairesDTO {
         entity.setEchographies(dto.getEchographies());
         entity.setScanners(dto.getScanners());
         entity.setIrm(dto.getIrm());
+
+        // Tests spéciaux
         if (dto.getTestsSpeciaux() != null) {
             List<TestSpecial> tests = new ArrayList<>();
-            for (Map.Entry<String, String> entry : dto.getTestsSpeciaux().entrySet()) {
-                tests.add(new TestSpecial(entry.getKey(), entry.getValue()));
+            for (Map<String, String> map : dto.getTestsSpeciaux()) {
+                for (Map.Entry<String, String> entry : map.entrySet()) {
+                    tests.add(new TestSpecial(entry.getKey(), entry.getValue()));
+                }
             }
             entity.setTestsSpeciaux(tests);
         }
@@ -117,4 +125,3 @@ public class ExamensComplementairesDTO {
         return entity;
     }
 }
-

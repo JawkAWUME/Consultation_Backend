@@ -4,9 +4,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sn.project.consultation.api.dto.FactureDTO;
 import sn.project.consultation.api.dto.PaiementRequestDTO;
 import sn.project.consultation.api.dto.PatientDTO;
 import sn.project.consultation.api.dto.ProSanteDTO;
@@ -23,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/paiements")
 @Tag(name = "Paiements", description = "Paiement, Facture")
@@ -32,89 +38,65 @@ public class PaiementController {
     @Autowired private FactureService factureService;
     @Autowired private PaiementRepository paiementRepo;
     @Autowired private FactureRepository factureRepo;
-    @Autowired private PaytechService paytechService; // Service que nous allons utiliser
+    @Autowired private PaytechService paytechService;
 
-    // -------------------------
-    // Paiement intelligent existant
-    // -------------------------
-    @PostMapping("/payer")
-    public ResponseEntity<Facture> effectuerPaiement(@RequestBody PaiementRequestDTO dto) {
-        Facture facture = paiementService.effectuerPaiement(dto);
+    @PostMapping("/payer/{factureId}")
+    public ResponseEntity<Facture> effectuerPaiement(
+            @PathVariable Long factureId,
+            @Valid @RequestBody PaiementRequestDTO dto) {
+        Facture facture = paiementService.effectuerPaiement(factureId, dto);
         return ResponseEntity.ok(facture);
     }
 
-    // -------------------------
-    // Nouveau : Initier un paiement via PayTech
-    // -------------------------
-    @PostMapping("/initier")
-    @Operation(summary = "Initier un paiement via Wave ou Orange Money")
-    public ResponseEntity<Map<String, String>> initierPaiement(@RequestBody PaiementRequestDTO dto) {
-        // Crée le paiement en base
-        Paiement paiement = new Paiement();
-        paiement.setMontant(dto.getMontant());
-        paiement.setDatePaiement(LocalDateTime.now());
-        paiement.setPatient(PatientDTO.toEntity(dto.getPatient()));
-        paiement.setProfessionnel(ProSanteDTO.toEntity(dto.getProfessionnel()));
-        paiement.setMethode(dto.getMethode()); // "WAVE" ou "ORANGE"
-        dto.setStatut("EN_ATTENTE");
-        paiement.setStatut(dto.getStatut());
-
-        paiementRepo.save(paiement);
-
-        // Génère le lien de paiement via PayTech
-        String urlPaiement = paytechService.initierPaiement(
-                paiement.getMontant(),
-                paiement.getMethode(),
-                paiement.getId()
-        );
-
-        // Retourne l'URL au frontend
+    @PostMapping("/initier/{factureId}")
+    @Operation(summary = "Initier un paiement partiel via Wave ou Orange Money pour une facture")
+    public ResponseEntity<Map<String, String>> initierPaiement(
+            @PathVariable Long factureId,
+            @Valid @RequestBody PaiementRequestDTO dto) {
         Map<String, String> response = new HashMap<>();
-        response.put("paiementUrl", urlPaiement);
-        response.put("paiementId", paiement.getId().toString());
+        try {
+            Paiement paiement = paiementService.initierPaiementPourFacture(factureId, dto);
 
-        return ResponseEntity.ok(response);
+            String urlPaiement = paytechService.initierPaiement(
+                    paiement.getMontant(),
+                    paiement.getMethode(),
+                    paiement.getId(),
+                    paiement.getPatient().getId()
+            );
+
+            response.put("paiementUrl", urlPaiement);
+            response.put("paiementId", paiement.getId().toString());
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            log.error("Erreur lors de l'initiation du paiement : {}", e.getMessage(), e);
+            response.put("error", "Impossible de créer le paiement");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
-    @Operation(summary = "Montant restant à payer d’un patient")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Montant récupéré avec succès"),
-            @ApiResponse(responseCode = "404", description = "Patient non trouvé"),
-            @ApiResponse(responseCode = "500", description = "Erreur serveur")
-    })
     @GetMapping("/montant/{patientId}")
     public ResponseEntity<Double> getMontantAPayer(@PathVariable Long patientId) {
-        Double montant = paiementService.getMontantAPayer(patientId);
-        return ResponseEntity.ok(montant);
+        return ResponseEntity.ok(paiementService.getMontantAPayer(patientId));
     }
 
-    // -------------------------
-    // Détail paiement existant
-    // -------------------------
     @GetMapping("/details/{paiementId}")
     public ResponseEntity<Paiement> getDetailPaiement(@PathVariable Long paiementId) {
-        Paiement paiement = paiementRepo.findById(paiementId).orElseThrow();
-        return ResponseEntity.ok(paiement);
+        return ResponseEntity.ok(paiementRepo.findById(paiementId).orElseThrow());
     }
 
-    // -------------------------
-    // Liste des factures existantes
-    // -------------------------
     @GetMapping("/factures/{patientId}")
-    public ResponseEntity<List<Facture>> listerFactures(@PathVariable Long patientId) {
-        List<Facture> factures = factureService.getFacturesByPatient(patientId);
-        return ResponseEntity.ok(factures);
+    public ResponseEntity<List<FactureDTO>> listerFactures(@PathVariable Long patientId) {
+        return ResponseEntity.ok(factureService.getFacturesByPatient(patientId));
     }
 
-    // -------------------------
-    // Supprimer une facture existante
-    // -------------------------
     @DeleteMapping("/factures/{id}")
     public ResponseEntity<Void> supprimerFacture(@PathVariable Long id) {
         factureRepo.deleteById(id);
         return ResponseEntity.noContent().build();
     }
-
-
-
 }
+

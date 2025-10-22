@@ -42,7 +42,8 @@ public class ProSanteController {
         List<ProSanteDTO> dtos = pros.stream().map(pro -> {
             ProSanteDTO dto = new ProSanteDTO();
             dto.setId(pro.getId());
-            dto.setNom(pro.getPrenom()+" "+pro.getNom());
+            dto.setNom(pro.getNom());
+            dto.setPrenom(pro.getPrenom());
             dto.setSpecialite(pro.getSpecialite());
             dto.setTarif(pro.getTarif());
             dto.setLatitude(pro.getLatitude());

@@ -2,6 +2,7 @@ package sn.project.consultation.data.entities;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embeddable;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -11,6 +12,7 @@ import java.util.List;
 @Embeddable
 @Getter
 @Setter
+@RequiredArgsConstructor
 public class Antecedents {
 
     // Antécédents personnels

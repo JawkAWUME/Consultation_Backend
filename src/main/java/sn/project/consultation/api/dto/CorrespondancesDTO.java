@@ -12,14 +12,14 @@ import sn.project.consultation.data.entities.Correspondances;
 public class CorrespondancesDTO {
     private CompteRenduOperatoireDTO compteRenduOperatoire;
     private CompteRenduHospitalisationDTO compteRenduHospitalisation;
-    private LettreConfrereDTO lettreMedecinTraitant;
+    private LettreConfrereDTO lettreConfrere;
 
     public static CorrespondancesDTO fromEntity(Correspondances correspondances) {
         if (correspondances == null) return null;
         CorrespondancesDTO correspondancesDTO = new CorrespondancesDTO();
         correspondancesDTO.setCompteRenduHospitalisation(CompteRenduHospitalisationDTO.fromEntity(correspondances.getCompteRenduHospitalisation()));
         correspondancesDTO.setCompteRenduOperatoire( CompteRenduOperatoireDTO.fromEntity(correspondances.getCompteRenduOperatoire()));
-        correspondancesDTO.setLettreMedecinTraitant( LettreConfrereDTO.fromEntity(correspondances.getLettreConfrere()));
+        correspondancesDTO.setLettreConfrere( LettreConfrereDTO.fromEntity(correspondances.getLettreConfrere()));
         return correspondancesDTO;
     }
 
@@ -28,7 +28,7 @@ public class CorrespondancesDTO {
         Correspondances correspondances = new Correspondances();
         correspondances.setCompteRenduHospitalisation(CompteRenduHospitalisationDTO.toEntity(dto.getCompteRenduHospitalisation()));
         correspondances.setCompteRenduOperatoire(CompteRenduOperatoireDTO.toEntity(dto.getCompteRenduOperatoire()));
-        correspondances.setLettreConfrere(LettreConfrereDTO.toEntity(dto.getLettreMedecinTraitant()));
+        correspondances.setLettreConfrere(LettreConfrereDTO.toEntity(dto.getLettreConfrere()));
         return correspondances;
     }
 }

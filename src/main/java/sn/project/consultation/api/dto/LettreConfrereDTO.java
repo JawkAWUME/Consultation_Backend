@@ -21,7 +21,7 @@ public class LettreConfrereDTO {
     private String motifConsultation;
     private List<String> resultatsExamens;
     private String diagnostic;
-    private List<String> traitementPropose;
+    private List<String> traitementsProposes;
     private List<String> recommandationsSuivi;
     private ProSanteDTO auteur;
     private ProSanteDTO destinataire;
@@ -41,7 +41,7 @@ public class LettreConfrereDTO {
         dto.setMotifConsultation(lettre.getMotifConsultation());
         dto.setResultatsExamens(lettre.getResultatsExamens());
         dto.setDiagnostic(lettre.getDiagnostic());
-        dto.setTraitementPropose(lettre.getTraitementPropose());
+        dto.setTraitementsProposes(lettre.getTraitementPropose());
         dto.setRecommandationsSuivi(lettre.getRecommandationsSuivi());
         dto.setAuteur(ProSanteDTO.fromEntity(lettre.getAuteur()));
         dto.setDestinataire(ProSanteDTO.fromEntity(lettre.getDestinataire()));
@@ -55,7 +55,7 @@ public class LettreConfrereDTO {
         lettre.setMotifConsultation(dto.getMotifConsultation());
         lettre.setResultatsExamens(dto.getResultatsExamens());
         lettre.setDiagnostic(dto.getDiagnostic());
-        lettre.setTraitementPropose(dto.getTraitementPropose());
+        lettre.setTraitementPropose(dto.getTraitementsProposes());
         lettre.setRecommandationsSuivi(dto.getRecommandationsSuivi());
         lettre.setAuteur(ProSanteDTO.toEntity(dto.getAuteur()));
         lettre.setDestinataire(ProSanteDTO.toEntity(dto.getDestinataire()));

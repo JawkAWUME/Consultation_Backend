@@ -1,5 +1,7 @@
 package sn.project.consultation.services;
 
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import sn.project.consultation.api.dto.PaiementRequestDTO;
@@ -15,13 +17,12 @@ import sn.project.consultation.services.impl.SmsService;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
+@Slf4j
 @Service
 public class PaiementService {
 
-    @Autowired
-    private PaiementRepository paiementRepo;
-    @Autowired FactureRepository factureRepo;
+    @Autowired private PaiementRepository paiementRepo;
+    @Autowired private FactureRepository factureRepo;
     @Autowired private FactureService factureService;
     @Autowired private PatientRepository patientRepo;
     @Autowired private ProSanteRepository proRepo;
@@ -29,75 +30,167 @@ public class PaiementService {
     @Autowired private EmailService emailService;
     @Autowired private SmsService smsService;
 
-    // ✅ Traitement intelligent du paiement
-    public Facture effectuerPaiement(PaiementRequestDTO dto) {
-        Patient patient = patientRepo.findById(dto.getPatient().getId()).orElseThrow();
-        ProSante pro = proRepo.findById(dto.getProfessionnel().getId()).orElseThrow();
+    /**
+     * Paiement direct (simulation de succès)
+     */
+    @Transactional
+    public Facture effectuerPaiement(Long factureId, PaiementRequestDTO dto) {
+        Facture facture = factureRepo.findById(factureId)
+                .orElseThrow(() -> new IllegalArgumentException("Facture introuvable"));
 
-        // 🔐 Contrôle anti-fraude : 3 paiements échoués en 1h
-        if (paiementRepo.countFailuresRecentes(patient.getId(), LocalDateTime.now().minusHours(1)) >= 3) {
-            throw new IllegalStateException("Trop de tentatives échouées, veuillez réessayer plus tard.");
+        Patient patient = patientRepo.findById(dto.getPatient().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Patient introuvable"));
+        ProSante pro = proRepo.findById(dto.getProfessionnel().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Professionnel introuvable"));
+
+        // Montant déjà payé pour cette facture
+        Double dejaPaye = paiementRepo.findByPatientIdAndStatut(patient.getId(), "SUCCES")
+                .stream()
+                .filter(p -> p.getFacture() != null && p.getFacture().getId().equals(factureId))
+                .mapToDouble(Paiement::getMontant)
+                .sum();
+
+        double montantTotal = pro.getTarif();
+        double montantRestant = montantTotal - dejaPaye;
+        double montantAPayer = dto.getMontant();
+
+        if (montantAPayer <= 0) {
+            throw new IllegalArgumentException("Le montant doit être > 0");
+        }
+        if (montantAPayer > montantRestant) {
+            throw new IllegalArgumentException("Le montant payé dépasse le montant restant (" + montantRestant + ")");
         }
 
-        Double montant = pro.getTarif();
-
-        // 💡 Suggestion de méthode basée sur l’historique
-        String methodePredefinie = getMethodePreferee(patient);
-
+        // Créer un nouveau paiement
         Paiement paiement = new Paiement();
-        paiement.setMontant(montant);
+        paiement.setMontant(montantAPayer);
         paiement.setPatient(patient);
         paiement.setProfessionnel(pro);
         paiement.setDatePaiement(LocalDateTime.now());
-        paiement.setMethode(dto.getMethode() != null ? dto.getMethode() : methodePredefinie);
-        paiement.setStatut("SUCCES"); // Simulé
-        paiementRepo.save(paiement);
-        // 🤖 Génération automatique de facture
-        Facture facture = factureService.genererEtEnvoyerFacture(paiement);
+        paiement.setMethode(dto.getMethode());
+        paiement.setStatut("SUCCES");
         paiement.setFacture(facture);
+
         paiementRepo.save(paiement);
-        // 📱 Envoi multi-canal du reçu
-        envoyerRecuMultiCanal(patient, facture);
+
+        log.info("💰 Paiement {} FCFA enregistré pour facture {} (restant: {})",
+                montantAPayer, facture.getNumero(), montantRestant - montantAPayer);
 
         return facture;
     }
 
+    @Transactional
+    public Paiement initierPaiementPourFacture(Long factureId, PaiementRequestDTO dto) {
+        Facture facture = factureRepo.findById(factureId)
+                .orElseThrow(() -> new IllegalArgumentException("Facture introuvable"));
+
+        Patient patient = patientRepo.findById(dto.getPatient().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Patient introuvable"));
+        ProSante pro = proRepo.findById(dto.getProfessionnel().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Professionnel introuvable"));
+
+        // Montant déjà payé
+        Double dejaPaye = paiementRepo.findByPatientIdAndStatut(patient.getId(), "SUCCES")
+                .stream()
+                .filter(p -> p.getFacture() != null && p.getFacture().getId().equals(factureId))
+                .mapToDouble(Paiement::getMontant)
+                .sum();
+
+        double montantTotal = pro.getTarif();
+        double montantRestant = montantTotal - dejaPaye;
+        double montantAPayer = dto.getMontant();
+
+        if (montantAPayer <= 0 || montantAPayer > montantRestant) {
+            throw new IllegalArgumentException("Montant invalide. Restant dû: " + montantRestant);
+        }
+
+        Paiement paiement = new Paiement();
+        paiement.setMontant(montantAPayer);
+        paiement.setPatient(patient);
+        paiement.setProfessionnel(pro);
+        paiement.setDatePaiement(LocalDateTime.now());
+        paiement.setMethode(dto.getMethode());
+        paiement.setStatut("EN_ATTENTE");
+        paiement.setFacture(facture);
+
+        paiementRepo.save(paiement);
+
+        return paiement;
+    }
+
+
+
+    /**
+     * Création d’un paiement en attente (utilisé pour PayTech)
+     */
+    @Transactional
+    public Paiement creerPaiementEnAttente(PaiementRequestDTO dto) {
+        Patient patient = patientRepo.findById(dto.getPatient().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Patient introuvable"));
+        ProSante pro = proRepo.findById(dto.getProfessionnel().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Professionnel introuvable"));
+
+        Paiement paiement = new Paiement();
+        paiement.setMontant(dto.getMontant() != null ? dto.getMontant() : pro.getTarif());
+        paiement.setPatient(patient);
+        paiement.setProfessionnel(pro);
+        paiement.setDatePaiement(LocalDateTime.now());
+        paiement.setMethode(dto.getMethode());
+        paiement.setStatut("EN_ATTENTE");
+
+        paiementRepo.save(paiement);
+        log.info("⏳ Paiement en attente créé (id={}) pour patient {}", paiement.getId(), patient.getId());
+        return paiement;
+    }
+
+    /**
+     * Montant restant à payer pour un patient
+     */
     public Double getMontantAPayer(Long patientId) {
         return paiementRepo.getMontantRestantByPatient(patientId);
     }
 
-    // 🔁 Déduction méthode préférée du patient
+    /**
+     * Déduction de la méthode préférée du patient
+     */
     private String getMethodePreferee(Patient patient) {
         return paiementRepo.findTopByPatientIdOrderByDatePaiementDesc(patient.getId())
                 .map(Paiement::getMethode)
                 .orElse("Carte");
     }
 
+    /**
+     * Envoi du reçu par Email et SMS
+     */
     private void envoyerRecuMultiCanal(Patient patient, Facture facture) {
         String message = "🎉 Paiement confirmé ! Reçu n°" + facture.getNumero() + " envoyé à votre email.";
 
-        // Extraire chemin relatif depuis l’URL simulée
         String url = facture.getUrlPdf();
         String cheminRelatif = url.replace("http://localhost:10001/files/", "");
-
-        // Convertir en chemin local
         String cheminLocal = cloudStorage.getCheminComplet(cheminRelatif);
 
         // Email
-        emailService.envoyerEmail(
-                "jawkstwitter@gmail.com",
-                "Votre reçu de paiement",
-                message,
-                cheminLocal
-        );
+        try {
+            emailService.envoyerEmail(
+                    patient.getCoordonnees().getEmail(),
+                    "Votre reçu de paiement",
+                    message,
+                    cheminLocal
+            );
+            log.info("📧 Reçu envoyé par email à {}", patient.getCoordonnees().getEmail());
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de l'envoi de l'email au patient {} : {}", patient.getId(), e.getMessage());
+        }
 
         // SMS
-//        if (patient.getNumeroTelephone() != null) {
-//            smsService.envoyerSms(patient.getNumeroTelephone(), message);
-//        }
-
-        // WebSocket (optionnel)
-        // notificationService.push(patient.getId(), "Reçu disponible 📄");
+        try {
+            if (patient.getCoordonnees().getNumeroTelephone() != null) {
+//                smsService.envoyerSms(patient.getCoordonnees().getNumeroTelephone(), message);
+                log.info("📱 SMS de confirmation envoyé à {}", patient.getCoordonnees().getNumeroTelephone());
+            }
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de l'envoi du SMS au patient {} : {}", patient.getId(), e.getMessage());
+        }
     }
-
 }
+

@@ -11,9 +11,9 @@ public interface DossierMedicalService {
 
     // === CRUD GLOBAL ===
     DossierMedicalDTO creerDossier(Long patientId);
-    List<DossierMedicalDTO> getDossierByPatientId(Long id);
-    List<DossierMedicalDTO> getDossierByProSanteId(Long id);
-
+    List<DossierMedicalDTO> getDossiersByPatientId(Long id);
+    List<DossierMedicalDTO> getDossiersByProSanteId(Long id);
+    void genererDossierPourPatient(Long patientId, int nombreDossiers);
     // === DOCUMENTS MÉDICAUX ===
     void ajouterDocument(Long dossierId, FichierMedicalDTO dto);
     void ajouterFichierAnnexe(Long dossierId, FichierMedicalDTO dto);
@@ -38,7 +38,7 @@ public interface DossierMedicalService {
 
     // === ÉVOLUTION ET SUIVI ===
     void enregistrerEvolutionSuivi(Long dossierId, EvolutionSuivi suivi);
-
+    void genererDossierPourPro(Long proId, int nombreDossiers);
     // === CORRESPONDANCES MÉDICALES ===
     void enregistrerCorrespondances(Long dossierId, Correspondances correspondances);
     List<DossierMedicalDTO> getDossiers();

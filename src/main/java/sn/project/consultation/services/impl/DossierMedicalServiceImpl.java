@@ -1,5 +1,6 @@
 package sn.project.consultation.services.impl;
 
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import sn.project.consultation.api.dto.*;
@@ -8,7 +9,9 @@ import sn.project.consultation.data.repositories.*;
 import sn.project.consultation.services.DossierMedicalService;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 
@@ -17,9 +20,11 @@ public class DossierMedicalServiceImpl implements DossierMedicalService {
 
     @Autowired private DossierMedicalRepository dossierRepo;
     @Autowired private PatientRepository patientRepo;
+    @Autowired private ProSanteRepository proSanteRepo;
     @Autowired private DocumentMedicalRepository documentRepo;
     @Autowired private FichierMedicalRepository fichierRepo;
     @Autowired private HistoriqueConsultationRepository historiqueRepo;
+    private Random random;
 
     // === CRUD GLOBAL ===
 
@@ -31,12 +36,12 @@ public class DossierMedicalServiceImpl implements DossierMedicalService {
         return DossierMedicalDTO.fromEntity(dossier);
     }
 
-    public List<DossierMedicalDTO> getDossierByPatientId(Long id) {
+    public List<DossierMedicalDTO> getDossiersByPatientId(Long id) {
         return DossierMedicalDTO.fromEntities(
                 dossierRepo.findByPatientId(id));
     }
 
-    public List<DossierMedicalDTO> getDossierByProSanteId(Long id) {
+    public List<DossierMedicalDTO> getDossiersByProSanteId(Long id) {
         return DossierMedicalDTO.fromEntities(
                 dossierRepo.findByProSanteId(id));
     }
@@ -157,6 +162,103 @@ public class DossierMedicalServiceImpl implements DossierMedicalService {
         dossier.setCorrespondances(correspondances);
         dossierRepo.save(dossier);
     }
+
+    @Transactional
+    public void genererDossierPourPatient(Long patientId, int nombreDossiers) {
+        Patient patient = patientRepo.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("Patient introuvable"));
+
+        List<DossierMedical> dossiers = new ArrayList<>();
+        Random random = new Random();
+
+        for (int i = 0; i < nombreDossiers; i++) {
+            DossierMedical dossier = new DossierMedical();
+            dossier.setPatient(patient);
+            dossier.setResume("Dossier médical auto-généré pour " + patient.getNom());
+            dossier.setCouvertureSociale("CNAM");
+            dossier.setPersonneUrgence("Contact " + patient.getNom() + " Famille");
+            dossier.setTelPersonneUrgence("77 123 45 67");
+            dossier.setDate(LocalDate.now().minusDays(random.nextInt(200)));
+            Antecedents ant = new Antecedents();
+            ant.setAntecedentsMedicaux(List.of("Hypertension", "Asthme"));
+            ant.setAntecedentsChirurgicaux(List.of("Appendicectomie en 2018"));
+            ant.setAntecedentsObstetricaux(List.of("Grossesse 2020"));
+            ant.setAntecedentsPsychologiques(List.of("Anxiété légère"));
+            ant.setMaladiesFamiliales(List.of("Diabète (père)", "Cancer du sein (mère)"));
+            ant.setAllergies(List.of("Pénicilline"));
+            dossier.setAntecedents(ant);
+            // ⚡ Tu peux réutiliser la logique de tes Fixtures (antécédents, examens, etc.)
+
+            dossiers.add(dossier);
+        }
+
+        dossierRepo.saveAll(dossiers);
+    }
+
+    @Transactional
+    public void genererDossierPourPro(Long proId, int nombreDossiers) {
+        ProSante pro = proSanteRepo.findById(proId)
+                .orElseThrow(() -> new RuntimeException("Professionnel de santé introuvable"));
+
+        List<Patient> patients = patientRepo.findAll();
+        if (patients.isEmpty()) {
+            throw new RuntimeException("Aucun patient trouvé pour générer les dossiers.");
+        }
+
+        Random random = new Random();
+        List<DossierMedical> dossiers = new ArrayList<>();
+
+        for (int i = 0; i < nombreDossiers; i++) {
+            // 🔹 Sélection d’un patient aléatoire
+            Patient patient = patients.get(random.nextInt(patients.size()));
+
+            DossierMedical dossier = new DossierMedical();
+            dossier.setPatient(patient);
+            dossier.setResume("Dossier suivi par " + pro.getNom());
+            dossier.setCouvertureSociale("IPM - Mutuelle");
+            dossier.setPersonneUrgence("Contact " + patient.getNom() + " Famille");
+            dossier.setTelPersonneUrgence("76 321 45 89");
+            dossier.setDate(LocalDate.now().minusDays(random.nextInt(100)));
+
+            // 🔹 Exemple d’examen clinique lié au pro
+            ExamenClinique examen = new ExamenClinique();
+            examen.setPoids((double) (70 + random.nextInt(15)));
+            examen.setTaille(1.60 + (random.nextDouble() * 0.3));
+            examen.setTensionArterielle("12/" + (7 + random.nextInt(3)));
+            examen.setTemperature(36.5 + (random.nextDouble()));
+            examen.setFrequenceCardiaque(70 + random.nextInt(15));
+            examen.setSaturationOxygene(96 + random.nextInt(3));
+            examen.setObservations(List.of("Consultation effectuée par " + pro.getNom()));
+            dossier.setExamenClinique(examen);
+
+            // 🔹 Diagnostic
+            DiagnosticMedical diag = new DiagnosticMedical();
+            diag.setDiagnosticPrincipal("Contrôle général");
+            diag.setCodePrincipal("Z00.0");
+            diag.setSystemeCodification("CIM-10");
+            dossier.setDiagnosticMedical(diag);
+
+            // 🔹 Exemple de correspondance (LettreConfrere)
+            LettreConfrere lc = new LettreConfrere();
+            lc.setAuteur(pro);
+            lc.setDestinataire(pro); // ou un autre pro choisi
+            lc.setPatient(patient);
+            lc.setMotifConsultation("Suivi régulier");
+            lc.setDiagnostic("RAS");
+            lc.setTraitementPropose(List.of("Repos", "Hydratation"));
+            lc.setRecommandationsSuivi(List.of("Revenir dans 6 mois"));
+
+            Correspondances correspondances = new Correspondances();
+            correspondances.setLettreConfrere(lc);
+            dossier.setCorrespondances(correspondances);
+
+            dossiers.add(dossier);
+        }
+
+        dossierRepo.saveAll(dossiers);
+    }
+
+
 
 
 }

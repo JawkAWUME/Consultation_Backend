@@ -1,5 +1,6 @@
 package sn.project.consultation.data.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +25,7 @@ public class Paiement {
     private ProSante professionnel;
 
     @OneToOne(mappedBy = "paiement", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Facture facture;
 
     private String methode; // "Carte", "MobileMoney", "Virement"

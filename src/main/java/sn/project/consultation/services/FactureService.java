@@ -1,8 +1,11 @@
 package sn.project.consultation.services;
 
 
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import sn.project.consultation.api.dto.FactureDTO;
 import sn.project.consultation.data.entities.Facture;
 import sn.project.consultation.data.entities.Paiement;
 import sn.project.consultation.data.entities.Patient;
@@ -12,63 +15,60 @@ import sn.project.consultation.data.repositories.PatientRepository;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class FactureService {
 
-    @Autowired
-    private FactureRepository factureRepo;
+    @Autowired private FactureRepository factureRepo;
+    @Autowired private PatientRepository patientRepo;
+    @Autowired private PDFGeneratorService pdfGenerator;
+    @Autowired private EmailService emailService;
+    @Autowired private CloudStorageService cloudStorage;
 
-    @Autowired
-    private PatientRepository patientRepo;
-
-    @Autowired
-    private PDFGeneratorService pdfGenerator;
-
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private CloudStorageService cloudStorage;
-
-    /**
-     * Génère une facture PDF, l’enregistre et l’envoie au patient.
-     */
+    @Transactional
     public Facture genererEtEnvoyerFacture(Paiement paiement) {
-        String numero = genererNumeroFacture(paiement);
-        byte[] pdf = pdfGenerator.genererFacturePDF(paiement, numero);
-        String urlStockage = cloudStorage.upload(pdf, "factures/" + numero + ".pdf");
+        try {
+            String numero = genererNumeroFacture(paiement);
+            byte[] pdf = pdfGenerator.genererFacturePDF(paiement, numero);
+            String urlStockage = cloudStorage.upload(pdf, "factures/" + numero + ".pdf");
 
-        Facture facture = new Facture();
-        facture.setNumero(numero);
-        facture.setDateEmission(paiement.getDatePaiement());
-        facture.setPaiement(paiement);
-        facture.setUrlPdf(urlStockage);
+            Facture facture = new Facture();
+            facture.setNumero(numero);
+            facture.setDateEmission(paiement.getDatePaiement());
+            facture.setPaiement(paiement);
+            facture.setUrlPdf(urlStockage);
 
-        facture = factureRepo.save(facture);
+            facture = factureRepo.save(facture);
 
-        // Envoi par email avec pièce jointe (ByteArrayResource)
-        emailService.envoyerEmail(
-                "jawkstwitter@gmail.com",
-                "📄 Votre facture #" + numero,
-                "Merci pour votre paiement. Votre facture est jointe ou consultable ici : " + urlStockage,
-                pdf,
-                "facture-" + numero + ".pdf"
-        );
+            emailService.envoyerEmail(
+                    paiement.getPatient().getCoordonnees().getEmail(),
+                    "📄 Votre facture #" + numero,
+                    "Merci pour votre paiement. Votre facture est jointe ou consultable ici : " + urlStockage,
+                    pdf,
+                    "facture-" + numero + ".pdf"
+            );
 
-        return facture;
+            log.info("Facture {} générée et envoyée à {}", numero, paiement.getPatient().getCoordonnees().getEmail());
+            return facture;
+
+        } catch (Exception e) {
+            log.error("Erreur lors de la génération/envoi de facture : {}", e.getMessage(), e);
+            throw new RuntimeException("Impossible de générer ou envoyer la facture", e);
+        }
     }
 
-
-    public List<Facture> getFacturesByPatient(Long patientId) {
-        Patient patient=patientRepo.findById(patientId).orElseThrow();
-        return factureRepo.findByPaiement_PatientOrderByDateEmissionDesc(patient);
+    public List<FactureDTO> getFacturesByPatient(Long patientId) {
+        Patient patient = patientRepo.findById(patientId).orElseThrow();
+        List<Facture> factures = factureRepo.findByPaiement_PatientOrderByDateEmissionDesc(patient);
+        return factures.stream()
+                .map(FactureDTO::fromEntity)
+                .collect(Collectors.toList());
     }
-    /**
-     * Numérotation basée sur UUID + date
-     */
     private String genererNumeroFacture(Paiement paiement) {
         String date = paiement.getDatePaiement().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"));
         return "FAC-" + date + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
     }
 }
+

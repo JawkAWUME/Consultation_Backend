@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-@Order(6)
+@Order(8)
 public class HistoriqueConsultationFixtures implements CommandLineRunner {
     @Autowired
     private DossierMedicalRepository dossierRepo;

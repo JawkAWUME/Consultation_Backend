@@ -67,7 +67,7 @@ public class DossierMedicalController {
     })
     @GetMapping("/patient/{id}")
     public ResponseEntity<List<DossierMedicalDTO>> getDossier(@PathVariable Long id) {
-        return ResponseEntity.ok(dossierService.getDossierByPatientId(id));
+        return ResponseEntity.ok(dossierService.getDossiersByPatientId(id));
     }
 
     @Operation(summary = "Récupérer le dossier médical via un id")
@@ -87,15 +87,33 @@ public class DossierMedicalController {
 
     @GetMapping("/mes-dossiers")
     public ResponseEntity<List<DossierMedicalDTO>> getMesDossiers(Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+        CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
+        System.out.println(user.getUser().getRole());
+        if (user.getUser().getRole() == RoleUser.PATIENT) {
+            Long patientId = user.getUser().getId();
+            List<DossierMedicalDTO> dossiers = dossierService.getDossiersByPatientId(patientId);
 
-        if (user.getRole() == RoleUser.PATIENT) {
-            return ResponseEntity.ok(dossierService.getDossierByPatientId(user.getId()));
+            if (dossiers.isEmpty()) {
+                dossierService.genererDossierPourPatient(patientId, 3);
+                dossiers = dossierService.getDossiersByPatientId(user.getUser().getId());
+            }
+            return ResponseEntity.ok(dossiers);
         }
 
-        if (user.getRole() == RoleUser.PRO_SANTE) {
-            return ResponseEntity.ok(dossierService.getDossierByProSanteId(user.getId()));
+        if (user.getUser().getRole() == RoleUser.PRO_SANTE) {
+            Long proId = user.getUser().getId();
+            List<DossierMedicalDTO> dossiers = dossierService.getDossiersByProSanteId(proId);
+
+            // 🔹 Exemple : si tu veux aussi générer pour les pros (optionnel)
+            if (dossiers.isEmpty()) {
+                dossierService.genererDossierPourPro(proId, 2); // à implémenter si besoin
+                dossiers = dossierService.getDossiersByProSanteId(proId);
+            }
+
+            return ResponseEntity.ok(dossiers);
         }
+
+
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
@@ -239,8 +257,8 @@ public class DossierMedicalController {
             @ApiResponse(responseCode = "404", description = "Dossier introuvable")
     })
     @PutMapping("/{id}/correspondances")
-    public ResponseEntity<Void> updateCorrespondances(@PathVariable Long id, @RequestBody Correspondances dto) {
-        dossierService.enregistrerCorrespondances(id, dto);
+    public ResponseEntity<Void> updateCorrespondances(@PathVariable Long id, @RequestBody CorrespondancesDTO dto) {
+        dossierService.enregistrerCorrespondances(id, CorrespondancesDTO.toEntity(dto));
         return ResponseEntity.ok().build();
     }
 

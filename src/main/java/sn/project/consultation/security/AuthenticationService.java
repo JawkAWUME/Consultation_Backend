@@ -122,6 +122,7 @@ public class AuthenticationService {
         }
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        System.out.println(userDetails);
         User user = userRepository.findById(userDetails.getUser().getId())
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
 

@@ -3,6 +3,7 @@ package sn.project.consultation.data.fixtures;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import sn.project.consultation.data.entities.Paiement;
 import sn.project.consultation.data.entities.Patient;
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 @RequiredArgsConstructor
+@Order(6)
 public class PaiementFixtures implements CommandLineRunner {
 
     private final PaiementRepository paiementRepo;

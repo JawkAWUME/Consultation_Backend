@@ -13,4 +13,5 @@ public class PaiementRequestDTO {
     private ProSanteDTO professionnel;
     private String methode;
     private String statut;
+    private String datePaiement;
 }

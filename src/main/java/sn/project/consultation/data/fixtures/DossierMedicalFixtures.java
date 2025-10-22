@@ -224,5 +224,7 @@ public class DossierMedicalFixtures implements CommandLineRunner {
         dossierRepo.saveAll(dossiers);
         System.out.println("Dossier Medical Fixtures Completed.");
     }
+
+
 }
 

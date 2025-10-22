@@ -24,7 +24,7 @@ public class CompteRenduHospitalisationDTO {
     private List<String> diagnosticSortie;
     private List<String> examensEffectues;
     private List<String> traitements;
-    private List<String> evolution;
+    private List<String> evolutions;
     private List<String> recommandationsSortie;
     private ProSanteDTO auteur;
     private ProSanteDTO destinataire;
@@ -40,7 +40,7 @@ public class CompteRenduHospitalisationDTO {
         dto.setDiagnosticSortie(crh.getDiagnosticSortie());
         dto.setExamensEffectues(crh.getExamensEffectues());
         dto.setTraitements(crh.getTraitements());
-        dto.setEvolution(crh.getEvolution());
+        dto.setEvolutions(crh.getEvolution());
         dto.setRecommandationsSortie(crh.getRecommandationsSortie());
         dto.setAuteur(ProSanteDTO.fromEntity(crh.getAuteur()));
         dto.setDestinataire(ProSanteDTO.fromEntity(crh.getDestinataire()));
@@ -57,7 +57,7 @@ public class CompteRenduHospitalisationDTO {
         crh.setDiagnosticSortie(dto.getDiagnosticSortie());
         crh.setExamensEffectues(dto.getExamensEffectues());
         crh.setTraitements(dto.getTraitements());
-        crh.setEvolution(dto.getEvolution());
+        crh.setEvolution(dto.getEvolutions());
         crh.setRecommandationsSortie(dto.getRecommandationsSortie());
         crh.setAuteur(ProSanteDTO.toEntity(dto.getAuteur()));
         crh.setDestinataire(ProSanteDTO.toEntity(dto.getDestinataire()));

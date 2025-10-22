@@ -19,4 +19,8 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
 
     @Query("SELECT COALESCE(SUM(p.montant), 0) FROM Paiement p WHERE p.patient.id = :patientId AND p.statut <> 'SUCCES'")
     Double getMontantRestantByPatient(@Param("patientId") Long patientId);
+
+    @Query("SELECT SUM(p.montant) FROM Paiement p WHERE p.patient.id = :patientId AND p.professionnel.id = :proId")
+    Double sumMontantByPatientAndPro(Long patientId, Long proId);
+
 }
