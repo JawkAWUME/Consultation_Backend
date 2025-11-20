@@ -5,6 +5,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 @Entity
 @Getter
@@ -17,7 +22,13 @@ public class Facture {
     private String numero;
     private LocalDateTime dateEmission;
     private String urlPdf;
+    private Double montant;
 
-    @OneToOne
+    // ✅ Une seule facture <-> un seul paiement
+    @OneToOne(mappedBy = "facture", cascade = CascadeType.ALL, orphanRemoval = true)
     private Paiement paiement;
+
+    @Enumerated(EnumType.STRING)
+    private EtatPaiement etatPaiement;
 }
+

@@ -81,25 +81,100 @@ public class RendezVousServiceImpl implements RendezVousService {
         RendezVous rdv = new RendezVous();
         rdv.setDateHeure(dto.getDateHeure());
         rdv.setStatut("EN_ATTENTE");
-//        String[] parts = dto.getPatient() != null ? dto.getPatient().split(" ", 2) : new String[]{"", ""};
+
         System.out.println(dto);
-        Patient patient = patientRepo.findByNomIgnoreCaseAndPrenomIgnoreCase(dto.getPatient().getNom(), dto.getPatient().getPrenom());
-//        String[] parts1 = dto.getProfessionnel() != null ? dto.getProfessionnel().split(" ", 2) : new String[]{"", ""};
-        ProSante proSante = proRepo.findByNomIgnoreCaseAndPrenomIgnoreCase(dto.getProSante().getNom(), dto.getProSante().getPrenom());
+
+        // Récupérer le patient
+        Patient patient = patientRepo.findByNomIgnoreCaseAndPrenomIgnoreCase(
+                dto.getPatient().getNom(),
+                dto.getPatient().getPrenom()
+        );
+
+        if (patient == null) {
+            throw new RuntimeException("Patient non trouvé");
+        }
         rdv.setPatient(patient);
-        rdv.setProsante(proSante);
+
+        // Gestion du professionnel : optionnel
+        if (dto.getProSante() != null && dto.getProSante().getId() != null) {
+            // Si un professionnel est spécifié, le récupérer
+            ProSante proSante = proRepo.findById(dto.getProSante().getId())
+                    .orElseThrow(() -> new RuntimeException("Professionnel non trouvé"));
+            rdv.setProsante(proSante);
+        } else {
+            // Si aucun professionnel n'est spécifié, trouver automatiquement un professionnel disponible
+            ProSante proDisponible = trouverProSanteDisponible(
+                    dto.getDateHeure(),
+                    dto.getProSante().getSpecialite() // Vous devrez peut-être ajouter ce champ au DTO
+            );
+
+            if (proDisponible == null) {
+                throw new RuntimeException("Aucun professionnel disponible trouvé pour cette date et créneau");
+            }
+            rdv.setProsante(proDisponible);
+        }
+
         System.out.println(rdv.getPatient().getId());
         repo.save(rdv);
         dto.setId(rdv.getId());
 
-        // ✅ Si le rendez-vous est dans les 24h => envoyer une alerte au Pro
-//        if (dto.getDateHeure().isBefore(LocalDateTime.now().plusHours(24))) {
-//            String msg = "🔴 Nouveau rendez-vous urgent de " + patient.getNom()
-//                    + " prévu à " + dto.getDateHeure();
-//            emailService.envoyerEmail(rdv.getProsante().getCoordonnees().getEmail(), "Rendez-vous urgent", msg);
-////            smsService.envoyerSms(rdv.getProsante().getCoordonnees().getNumeroTelephone(), msg);
-//        }
         return dto;
+    }
+
+    /**
+     * Trouve un professionnel disponible pour une date/heure donnée
+     */
+    private ProSante trouverProSanteDisponible(LocalDateTime dateHeure, String specialite) {
+        // Récupérer tous les professionnels de la spécialité demandée
+        List<ProSante> professionnels = proRepo.findBySpecialite(specialite);
+
+        for (ProSante pro : professionnels) {
+            // Vérifier si le professionnel est disponible à cette date/heure
+            boolean estDisponible = verifierDisponibilite(pro, dateHeure);
+            if (estDisponible) {
+                return pro;
+            }
+        }
+
+        // Si aucun professionnel de la spécialité n'est disponible, chercher dans toutes les spécialités
+        List<ProSante> tousLesProfessionnels = proRepo.findAll();
+        for (ProSante pro : tousLesProfessionnels) {
+            boolean estDisponible = verifierDisponibilite(pro, dateHeure);
+            if (estDisponible) {
+                return pro;
+            }
+        }
+
+        return null;
+    }
+
+
+    /**
+     * Vérifie si un professionnel est disponible à une date/heure donnée
+     */
+    private boolean verifierDisponibilite(ProSante pro, LocalDateTime dateHeure) {
+        // Vérifier s'il n'y a pas déjà un rendez-vous à cette date/heure
+        List<RendezVous> rdvExistants = repo.findByProsanteAndDateHeure(pro, dateHeure);
+
+        // Vérifier les horaires de travail du professionnel
+        boolean dansLesHoraires = estDansLesHorairesTravail(pro, dateHeure);
+
+        return rdvExistants.isEmpty() && dansLesHoraires;
+    }
+
+    /**
+     * Vérifie si la date/heure est dans les horaires de travail du professionnel
+     */
+    private boolean estDansLesHorairesTravail(ProSante pro, LocalDateTime dateHeure) {
+        // Implémentez la logique des horaires de travail
+        // Par exemple : vérifier le jour de la semaine et l'heure
+        DayOfWeek jour = dateHeure.getDayOfWeek();
+        int heure = dateHeure.getHour();
+
+        // Exemple basique : du lundi au vendredi, 8h-18h
+        return !jour.equals(DayOfWeek.SATURDAY) &&
+                !jour.equals(DayOfWeek.SUNDAY) &&
+                heure >= 8 && heure <= 18;
     }
 
     public List<LocalDateTime> getCreneauxDisponibles(Long proId, LocalDate date) {

@@ -24,10 +24,13 @@ public class Paiement {
     @ManyToOne
     private ProSante professionnel;
 
-    @OneToOne(mappedBy = "paiement", cascade = CascadeType.ALL)
-    @JsonIgnore
+    // ✅ Chaque paiement concerne UNE facture
+    @OneToOne
+    @JoinColumn(name = "facture_id", unique = true)
     private Facture facture;
 
-    private String methode; // "Carte", "MobileMoney", "Virement"
-    private String statut;  // "SUCCES", "ECHEC", "EN_ATTENTE"
+    private String methode;  // "Carte", "MobileMoney", "Virement"
+    private String statut;   // "SUCCES", "ECHEC", "EN_ATTENTE"
+    private String reference;
 }
+

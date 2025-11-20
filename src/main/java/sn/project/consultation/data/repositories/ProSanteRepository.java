@@ -15,6 +15,7 @@ public interface ProSanteRepository extends JpaRepository<ProSante, Long> {
             "LIKE LOWER(CONCAT('%', :specialite, '%')))")
     List<ProSante> findByNomPrenomOrSpecialite(@Param("nom") String nom,
                                                @Param("specialite") String specialite);
+    List<ProSante> findBySpecialite(String specialite);
     List<ProSante> findByTarifLessThanEqual(Double tarif);
     ProSante findByNomIgnoreCaseAndPrenomIgnoreCase(String nom, String prenom);
 }

@@ -7,6 +7,17 @@ import sn.project.consultation.data.entities.Facture;
 import sn.project.consultation.data.entities.Paiement;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import sn.project.consultation.data.entities.Facture;
+import sn.project.consultation.data.entities.Paiement;
+import sn.project.consultation.data.entities.EtatPaiement;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -18,14 +29,15 @@ public class FactureDTO {
     private LocalDateTime dateEmission;
     private String urlPdf;
 
-    private Double montant;
-    private String methode;
-    private String statut;
+    private Double montant;        // Montant de la facture
+    private PaiementDTO paiement;  // Paiement unique associé
 
-    private PatientDTO patient;
-    private ProSanteDTO professionnel;
+    private Double montantTotal;   // Montant déjà payé
+    private Double montantASolder; // Reste à payer
 
-    // ✅ Conversion Entity → DTO
+    private String etatPaiement;   // "NON_PAYEE", "PAYEE_COMPLETEMENT", etc.
+
+    // ✅ Conversion entité → DTO
     public static FactureDTO fromEntity(Facture facture) {
         if (facture == null) return null;
 
@@ -34,20 +46,24 @@ public class FactureDTO {
         dto.setNumero(facture.getNumero());
         dto.setDateEmission(facture.getDateEmission());
         dto.setUrlPdf(facture.getUrlPdf());
+        dto.setMontant(facture.getMontant() != null ? facture.getMontant() : 0.0);
+        dto.setEtatPaiement(facture.getEtatPaiement() != null ? facture.getEtatPaiement().name() : "NON_DEFINI");
 
         Paiement paiement = facture.getPaiement();
         if (paiement != null) {
-            dto.setMontant(paiement.getMontant());
-            dto.setMethode(paiement.getMethode());
-            dto.setStatut(paiement.getStatut());
-            dto.setPatient(PatientDTO.fromEntity(paiement.getPatient()));
-            dto.setProfessionnel(ProSanteDTO.fromEntity(paiement.getProfessionnel()));
+            PaiementDTO paiementDTO = PaiementDTO.fromEntity(paiement);
+            dto.setPaiement(paiementDTO);
+            dto.setMontantTotal(paiement.getMontant());
+            dto.setMontantASolder(dto.getMontant() - paiement.getMontant());
+        } else {
+            dto.setMontantTotal(0.0);
+            dto.setMontantASolder(dto.getMontant());
         }
 
         return dto;
     }
 
-    // ✅ Conversion DTO → Entity (facultative ici)
+    // ✅ Conversion DTO → entité
     public static Facture toEntity(FactureDTO dto) {
         if (dto == null) return null;
 
@@ -56,7 +72,20 @@ public class FactureDTO {
         facture.setNumero(dto.getNumero());
         facture.setDateEmission(dto.getDateEmission());
         facture.setUrlPdf(dto.getUrlPdf());
+        facture.setMontant(dto.getMontant());
+        facture.setEtatPaiement(
+                dto.getEtatPaiement() != null
+                        ? Enum.valueOf(EtatPaiement.class, dto.getEtatPaiement())
+                        : null
+        );
+
+        if (dto.getPaiement() != null) {
+            Paiement paiement = PaiementDTO.toEntity(dto.getPaiement());
+            paiement.setFacture(facture);
+            facture.setPaiement(paiement);
+        }
 
         return facture;
     }
 }
+
