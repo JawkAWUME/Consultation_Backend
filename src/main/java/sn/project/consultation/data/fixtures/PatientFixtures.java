@@ -1,6 +1,7 @@
 package sn.project.consultation.data.fixtures;
 
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import sn.project.consultation.data.entities.Coordonnees;
 import sn.project.consultation.data.entities.Patient;
 import sn.project.consultation.data.enums.RoleUser;
@@ -23,8 +24,17 @@ public class PatientFixtures implements CommandLineRunner {
     @Autowired
     private PatientRepository patientRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder; // Ajouter PasswordEncoder
+
     @Override
     public void run(String... args) {
+        // Vérifier si des patients existent déjà pour éviter les doublons
+        if (patientRepository.count() > 0) {
+            System.out.println("Des patients existent déjà, skip des fixtures");
+            return;
+        }
+
         List<Patient> patients = new ArrayList<>();
 
         String[][] nomsPrenoms = {
@@ -63,7 +73,7 @@ public class PatientFixtures implements CommandLineRunner {
             } else if (prenomsFeminins.contains(prenom)) {
                 patient.setSexe("Féminin");
             } else {
-                patient.setSexe("Inconnu"); // fallback si prénom non trouvé
+                patient.setSexe("Inconnu");
             }
 
             // Coordonnées
@@ -73,9 +83,10 @@ public class PatientFixtures implements CommandLineRunner {
             coordonnees.setNumeroTelephone("77" + String.format("%07d", 1000 + i));
             patient.setCoordonnees(coordonnees);
 
-            // Sécurité & rôle
-            patient.setMotDePasse("password123"); // ⚠️ à encoder avec PasswordEncoder en prod
+            // Sécurité & rôle - MOT DE PASSE ENCODÉ
+            patient.setMotDePasse(passwordEncoder.encode("password123"));
             patient.setRole(RoleUser.PATIENT);
+            patient.setEnabled(true); // IMPORTANT: activer le compte
 
             // Champs spécifiques Patient
             patient.setMatricule("PAT-" + String.format("%04d", i + 1));
@@ -91,6 +102,6 @@ public class PatientFixtures implements CommandLineRunner {
         }
 
         patientRepository.saveAllAndFlush(patients);
+        System.out.println("Fixtures patients créées avec succès");
     }
 }
-

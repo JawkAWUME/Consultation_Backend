@@ -23,4 +23,6 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     @Query("SELECT SUM(p.montant) FROM Paiement p WHERE p.patient.id = :patientId AND p.professionnel.id = :proId")
     Double sumMontantByPatientAndPro(Long patientId, Long proId);
 
+     Optional<Paiement> findByReference(String reference);
+
 }

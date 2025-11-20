@@ -56,7 +56,7 @@ public class PaiementController {
         Map<String, String> response = new HashMap<>();
         try {
             Paiement paiement = paiementService.initierPaiementPourFacture(factureId, dto);
-
+            System.out.println(paiement.getMontant()+" "+paiement.getId());
             String urlPaiement = paytechService.initierPaiement(
                     paiement.getMontant(),
                     paiement.getMethode(),
@@ -78,10 +78,10 @@ public class PaiementController {
         }
     }
 
-    @GetMapping("/montant/{patientId}")
-    public ResponseEntity<Double> getMontantAPayer(@PathVariable Long patientId) {
-        return ResponseEntity.ok(paiementService.getMontantAPayer(patientId));
-    }
+//    @GetMapping("/montant/{patientId}")
+//    public ResponseEntity<Double> getMontantAPayer(@PathVariable Long patientId) {
+//        return ResponseEntity.ok(paiementService.getMontantAPayer(patientId));
+//    }
 
     @GetMapping("/details/{paiementId}")
     public ResponseEntity<Paiement> getDetailPaiement(@PathVariable Long paiementId) {
@@ -97,6 +97,19 @@ public class PaiementController {
     public ResponseEntity<Void> supprimerFacture(@PathVariable Long id) {
         factureRepo.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/callback")
+    @Operation(summary = "Callback PayTech — mise à jour automatique du paiement après confirmation")
+    public ResponseEntity<String> handlePaytechCallback(@RequestBody Map<String, Object> payload) {
+        try {
+            paiementService.traiterCallbackPaytech(payload);
+            return ResponseEntity.ok("Callback traité avec succès ✅");
+        } catch (Exception e) {
+            log.error("❌ Erreur callback PayTech : {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Erreur callback : " + e.getMessage());
+        }
     }
 }
 
