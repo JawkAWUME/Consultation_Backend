@@ -7,15 +7,19 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.userdetails.UserDetails;
 import sn.project.consultation.data.enums.RoleUser;
-
-import java.util.List;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import java.time.LocalDateTime;
 
 @Entity
-@Data
 @Getter
 @Setter
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class User  {
+public abstract class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,7 +27,6 @@ public abstract class User  {
     private String nom;
     private String prenom;
     private String sexe;
-
     private String motDePasse;
 
     @Embedded
@@ -32,18 +35,20 @@ public abstract class User  {
     @Enumerated(EnumType.STRING)
     private RoleUser role;
 
+    // Nouveaux champs pour l'administration
+    private boolean enabled = true;
 
+    @CreationTimestamp
+    @Column(name = "date_creation", updatable = false)
+    private LocalDateTime dateCreation;
+
+    @UpdateTimestamp
+    @Column(name = "date_modification")
+    private LocalDateTime dateModification;
+
+    // Méthodes de sécurité (conservées)
     public boolean isAccountNonExpired() { return true; }
-
-
     public boolean isAccountNonLocked() { return true; }
-
-
     public boolean isCredentialsNonExpired() { return true; }
-
-
-    public boolean isEnabled() { return true; }
-//    public Collection<? extends GrantedAuthority> getAuthorities() {
-//        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
-//    }
+    public boolean isEnabled() { return this.enabled; }
 }

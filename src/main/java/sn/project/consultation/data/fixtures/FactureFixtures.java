@@ -1,60 +1,84 @@
 package sn.project.consultation.data.fixtures;
 
-import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import sn.project.consultation.data.entities.Facture;
-import sn.project.consultation.data.entities.Paiement;
+import sn.project.consultation.data.entities.*;
 import sn.project.consultation.data.repositories.FactureRepository;
 import sn.project.consultation.data.repositories.PaiementRepository;
+import sn.project.consultation.data.repositories.PatientRepository;
+import sn.project.consultation.data.repositories.ProSanteRepository;
 
+
+import java.time.LocalDateTime;
+import java.util.*;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import sn.project.consultation.data.entities.*;
+
+
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.Random;
 
 @Component
 @RequiredArgsConstructor
-@Order(7)
+@Order(6)
 public class FactureFixtures implements CommandLineRunner {
 
-    private final PaiementRepository paiementRepo;
-    private final FactureRepository factureRepo;
+    private final FactureRepository factureRepository;
+    private final PaiementRepository paiementRepository;
+    private final PatientRepository patientRepository;
+    private final ProSanteRepository proSanteRepository;
 
     @Override
-    public void run(String... args) {
-        if (factureRepo.count() > 0) return;
+    public void run(String... args) throws Exception {
+        Random random = new Random();
+        List<Patient> patients = patientRepository.findAll();
+        List<ProSante> pros = proSanteRepository.findAll();
 
-        Faker faker = new Faker(new Locale("fr"));
-        List<Paiement> paiements = paiementRepo.findAll();
-
-        for (Paiement paiement : paiements) {
-            // Si le paiement a déjà une facture (au cas où fixtures rejouées)
-            if (paiement.getFacture() != null) continue;
-
+        int nbFactures = 10 + random.nextInt(11); // 10 à 20 factures
+        for (int i = 1; i <= nbFactures; i++) {
             Facture facture = new Facture();
-            facture.setDateEmission(
-                    paiement.getDatePaiement() != null
-                            ? paiement.getDatePaiement().plusMinutes(10)
-                            : faker.date().past(30, java.util.concurrent.TimeUnit.DAYS)
-                            .toInstant().atZone(java.time.ZoneId.systemDefault())
-                            .toLocalDateTime()
-            );
+            facture.setNumero("FAC-" + (1000 + i));
+            facture.setDateEmission(LocalDateTime.now().minusDays(random.nextInt(30)));
 
-            // Numéro unique
-            facture.setNumero("FAC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            // Montant fixe de la facture entre 1000 et 5000
+            double montantFacture = 1000 + random.nextInt(4001);
+            facture.setMontant(montantFacture);
 
-            // URL PDF simulée (on peut imaginer un endpoint de génération)
-            facture.setUrlPdf("https://example.com/factures/" + facture.getNumero() + ".pdf");
+            // Décider si la facture est payée ou non
+            boolean estPayee = random.nextBoolean();
 
-            // Lien bidirectionnel
-            facture.setPaiement(paiement);
-            paiement.setFacture(facture);
+            if (estPayee) {
+                Paiement paiement = new Paiement();
+                paiement.setDatePaiement(LocalDateTime.now().minusDays(random.nextInt(30)));
+                paiement.setMontant(montantFacture);
+                paiement.setPatient(patients.get(random.nextInt(patients.size())));
+                paiement.setProfessionnel(pros.get(random.nextInt(pros.size())));
+                paiement.setMethode(randomMethode(random));
+                paiement.setStatut("SUCCES");
+                paiement.setFacture(facture);
 
-            // ✅ Sauvegarde automatique grâce au cascade entre Paiement et Facture
-            paiementRepo.save(paiement);
+                facture.setPaiement(paiement); // OneToOne
+                facture.setEtatPaiement(EtatPaiement.PAYEE);
+            } else {
+                facture.setEtatPaiement(EtatPaiement.NON_PAYEE);
+            }
+
+            factureRepository.save(facture); // cascade persiste le paiement si présent
         }
     }
+
+    private String randomMethode(Random random) {
+        String[] methodes = {"Wave", "Orange Money"};
+        return methodes[random.nextInt(methodes.length)];
+    }
 }
+
+
+
